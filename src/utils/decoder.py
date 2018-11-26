@@ -4,14 +4,14 @@ from .common import read_file
 class Dataset(object):
     """Class that iterates over Dataset
     __iter__ method yields a tuple (words, tags)
-        words: list of raw words
-        tags: list of raw tags
+        lst: list of words/tags
+        sentence: the text of the sentence
     If processing_word and processing_tag are not None,
     optional preprocessing is applied
     Example:
         ```python
         data = Dataset(filename)
-        for sentence, tags in data:
+        for tuples, sentence in data:
             pass
         ```
     """
@@ -47,9 +47,20 @@ class Dataset(object):
 
 
 class Comp(Dataset):
+    """
+    Specific class for the comp files
+    """
+    def get_comp_text(self):
+        return read_file(self.filename)
+
     def __iter__(self):
-        txt = read_file(self.filename)
+        """
+        Iterates over the text file. Creates for each word a set of three labels
+        :return: List of threes for each word and the text of the sentence
+        """
+        txt = self.get_comp_text()
         sentences = txt.split('\n')
+
         for sentence in sentences:
             tuples, labeled_words, sentence_lst = [], [], []
             words = sentence.split(' ')

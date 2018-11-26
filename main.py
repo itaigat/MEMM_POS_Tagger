@@ -1,11 +1,11 @@
-from src.utils.decoder import Comp
-from src.utils.common import create_all_features
-from src.utils.params import Params
+import os
 from os.path import join, dirname
 
 import numpy as np
-import os
 
+from src.utils.common import create_all_features
+from src.utils.decoder import Comp
+from src.utils.params import Params
 
 # For Windows
 comp_dataset = Comp(join(dirname(os.getcwd()), 'resources', 'train_dev.wtag'))
@@ -19,5 +19,4 @@ for tuples, sentence in comp_dataset:
     x_lst.append(create_all_features(Params.feature_functions, Params.feature_lst_functions, tuples, sentence))
 
 x = np.concatenate(tuple(x_lst), axis=0)
-
 print(x.shape)

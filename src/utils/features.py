@@ -10,13 +10,29 @@ def unigram_f(**kwargs):
             'WDT', 'WP', 'WP$', 'WRB']
     sentence_tuples = kwargs['tuples']
 
-    for word in sentence_tuples:
-        word_pos_lst = [0 for i in range(len(poss))]
-
-        for idx, pos in enumerate(poss):
+    for pos in poss:
+        word_pos_lst = [0 for i in range(len(sentence_tuples))]
+        for idx, word in enumerate(sentence_tuples):
             if word[2] == pos:
                 word_pos_lst[idx] = 1
 
         lst.append(word_pos_lst)
+
+    return lst
+
+
+def bigram_f(**kwargs):
+    sentence_tuples = kwargs['tuples']
+    sentence = kwargs['text']
+    lst = []
+
+    for idx, sentence_tuple in enumerate(sentence_tuples):
+        if idx != 0:
+            if sentence[idx - 1] == 'the' and sentence_tuple[2] == 'NN':
+                lst.append(1)
+            else:
+                lst.append(0)
+        else:
+            lst.append(0)
 
     return lst

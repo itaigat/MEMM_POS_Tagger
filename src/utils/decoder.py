@@ -70,11 +70,12 @@ class Comp(Dataset):
 
             for idx, labeled_word in enumerate(labeled_words):
                 if idx == 0:
-                    tuples.append(('*', '*', labeled_word[1]))
+                    tuples.append(('*', '*', labeled_word[1], idx, sentence))
                 elif idx == 1:
-                    tuples.append(('*', labeled_words[0][1], labeled_word[1]))
+                    tuples.append(('*', labeled_words[0][1], labeled_word[1], idx, sentence))
                 else:
-                    tuples.append((labeled_words[idx - 2][1], labeled_words[idx - 1][1], labeled_word[1]))
+                    tuples.append((labeled_words[idx - 2][1], labeled_words[idx - 1][1],
+                                   labeled_word[1], idx, sentence))
 
                 sentence_lst.append(labeled_word[0])
 

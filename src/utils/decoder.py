@@ -1,5 +1,7 @@
 from .common import read_file
-
+from src.utils.features import build_features
+from src.utils.params import Params
+import numpy as np
 
 class Dataset(object):
     """Class that iterates over Dataset
@@ -44,42 +46,6 @@ class Dataset(object):
             st += ' '.join(sentence) + '\n' + ' '.join(tag) + '\n' + ' '.join(pos) + '\n'
 
         return st
-
-
-class Comp(Dataset):
-    """
-    Specific class for the comp files
-    """
-    def get_comp_text(self):
-        return read_file(self.filename)
-
-    def __iter__(self):
-        """
-        Iterates over the text file. Creates for each word a set of three labels
-        :return: List of threes for each word and the text of the sentence
-        """
-        txt = self.get_comp_text()
-        sentences = txt.split('\n')
-
-        for sentence in sentences:
-            tuples, labeled_words, sentence_lst = [], [], []
-            words = sentence.split(' ')
-
-            for word in words:
-                labeled_words.append(word.split('_'))
-
-            for idx, labeled_word in enumerate(labeled_words):
-                if idx == 0:
-                    tuples.append(('*', '*', labeled_word[1], idx, sentence))
-                elif idx == 1:
-                    tuples.append(('*', labeled_words[0][1], labeled_word[1], idx, sentence))
-                else:
-                    tuples.append((labeled_words[idx - 2][1], labeled_words[idx - 1][1],
-                                   labeled_word[1], idx, sentence))
-
-                sentence_lst.append(labeled_word[0])
-
-            yield tuples, sentence_lst
 
 
 class CompData(Dataset):
@@ -129,14 +95,26 @@ def create_dataset(iterable_sentences):
     """
     Gets a CompData object and return data ready for training/inference
     :param iterable_sentences: CompData type
-    :return: X,y and (sentences,sent_sizes)
+    :return: X of shape (N,m) , y of shape (N,)
     """
-    X, y, sentences, sent_sizes = [], [], [], []
+    X, y, sentences = [], [], []
     for tuples, tags, sentence in iterable_sentences:
         for i in range(len(tuples)):
             X.append(tuples[i])
             y.append(tags[i])
         sentences.append(sentence)
-        sent_sizes.append(len(tuples))
 
-    return X, y, (sentences, sent_sizes)
+    # build features
+    feature_matrix = None
+    len_dataset = len(X)
+
+    for i in range(len_dataset):
+        f = build_features(X[i], y[i], sentences, Params.features_fncs)  # f shape: (m,)
+        if i == 0:
+            feature_matrix = np.array(f)  # first row, init as array
+        else:
+            feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
+
+    feature_matrix = np.array(feature_matrix)
+
+    return feature_matrix, np.array(y)

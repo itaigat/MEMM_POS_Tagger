@@ -1,5 +1,5 @@
 import numpy as np
-
+from .common import poss
 
 def uni(x, y, sentence):
     """
@@ -9,9 +9,6 @@ def uni(x, y, sentence):
     :param sentence:
     :return: feature vector of shape (m,)
     """
-    poss = ['CC', 'CD', 'DT', 'EX', 'FW', 'IN', 'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN', 'NNS', 'NNP', 'NNPS', 'PDT',
-            'POS', 'PRP', 'PRP$', 'RB', 'RBR', 'RBS', 'RP', 'SYM', 'TO', 'UH', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ',
-            'WDT', 'WP', 'WP$', 'WRB']
     feature = [0 for i in range(len(poss))]
     for i, pos in enumerate(poss):
         if y == pos:

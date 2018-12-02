@@ -1,6 +1,4 @@
 from .common import read_file
-from src.utils.features import build_features
-from src.utils.params import Params
 import numpy as np
 
 class Dataset(object):
@@ -89,32 +87,3 @@ class CompData(Dataset):
                     tuples.append((u, v, sent_id, i))
 
             yield tuples, tags, stripped_sentence
-
-
-def create_dataset(iterable_sentences):
-    """
-    Gets a CompData object and return data ready for training/inference
-    :param iterable_sentences: CompData type
-    :return: X of shape (N,m) , y of shape (N,)
-    """
-    X, y, sentences = [], [], []
-    for tuples, tags, sentence in iterable_sentences:
-        for i in range(len(tuples)):
-            X.append(tuples[i])
-            y.append(tags[i])
-        sentences.append(sentence)
-
-    # build features
-    feature_matrix = None
-    len_dataset = len(X)
-
-    for i in range(len_dataset):
-        f = build_features(X[i], y[i], sentences, Params.features_fncs)  # f shape: (m,)
-        if i == 0:
-            feature_matrix = np.array(f)  # first row, init as array
-        else:
-            feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
-
-    feature_matrix = np.array(feature_matrix)
-
-    return feature_matrix, np.array(y)

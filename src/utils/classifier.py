@@ -49,12 +49,12 @@ class MaximumEntropyClassifier:
 
         # next we should feed both
         #feature_matrix, np.array(y)
-        X = feature_matrix
-        y = np.array(y)
+        self.X = feature_matrix
+        self.y = np.array(y)
         m = feature_matrix.shape[1]
         v_init = np.zeros(m)
 
-        res = minimize(self.loss, v_init, method='L-BFGS-B', jac=self.jacob, args=(X, y, sentences))
+        res = minimize(self.loss, v_init, method='L-BFGS-B', jac=self.grad, args=(self.X, self.y, sentences))
 
         if res.success:
             print("Optimization succeeded.")
@@ -69,32 +69,35 @@ class MaximumEntropyClassifier:
         :param y:
         :return: -log-likelihood
         """
-        m = X.shape[1]
-        loss = np.sum(v.dot(X.T))  # vectorized
+        loss = 0
 
+        # fully vectorized computations
+        first_term = np.sum(v.dot(X.T))
         second_term = 0
-        # for each history tuple compute unnormlalized log prob
-        for i,x in enumerate(X):
-            second_term += self.compute_y_matrix(v, x, sentences)
+        for i, x in enumerate(X):
+            second_term += self.compute_normalization(v,  x, sentences)
 
-        reg = (-LAMBDA / 2) * np.sum(v*v)
+        reg = (-LAMBDA / 2) * np.sum(v**2)
 
-        loss -= (second_term + reg)
+        # L(v) = a - b - regularization
+        loss = first_term - second_term - reg
 
-        return np.zeros(m)
+        return loss
 
-    def compute_y_matrix(self, v, x, sentences):
+    def compute_normalization(self, v, x, sentences):
         """
         iterates over all y's for a given X
         and compute log sum_y (e ^ (v * f(x,y))
 
         practiaclly build f(x,y) for each y, then use broadcasting to compute v * f(x,y)
+
+        do for each x in X and sum
         :return:
         """
-        epsilon = 1e-16
         # need to iterate over all possible y's
         # build its matrix iteratively
         feature_matrix = None
+
         for i, pos in enumerate(poss):
             f = build_features(x, poss[i], sentences, Params.features_fncs)  # f shape: (m,)
             if i == 0:
@@ -102,13 +105,11 @@ class MaximumEntropyClassifier:
             else:
                 feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
 
-        ret = np.log(np.sum(v.dot(feature_matrix.T)) + epsilon)
+        ret = np.log(np.sum(np.exp(v.dot(feature_matrix.T))))
 
         return ret
 
-        # finally ret = log ( np.sum ( v * features_matrix ) )
-
-    def jacob(self, v, X, y, sentences):
+    def grad(self, v, X, y, sentences):
         """
         defines
         :param X:
@@ -117,6 +118,10 @@ class MaximumEntropyClassifier:
         """
         #loss = x*V
         m = X.shape[1]
+        # for each entry in v we should compute the gradient
+        grad = np.zeros_like(v)
+
+        first_term = np.sum(self.X.T, axis=0)
 
         #  TODO: compute gradient
         return np.zeros(m)

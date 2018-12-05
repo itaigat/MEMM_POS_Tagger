@@ -1,19 +1,23 @@
-from src.utils.features import build_features
-from src.utils.params import Params
-from src.utils.common import poss
 import numpy as np
 from scipy.optimize import minimize
 
-LAMBDA = 0
+from src.utils.common import poss
+from src.utils.features import build_features, get_feature_matrix
+from src.utils.params import Params
+
 
 class MaximumEntropyClassifier:
     """
     implements MEMM, training and inference methods
     """
-    def __init__(self):
-        pass
 
-    def fit(self, iterable_sentences):
+    def __init__(self):
+        self.LAMBDA = 0
+
+        self.X = None
+        self.y = None
+
+    def fit(self, iterable_sentences, feature_funcs=Params.features_funcs):
         """
         iterable sentences:
             a tuple (tuples, tags, stripped_sentence)
@@ -25,33 +29,14 @@ class MaximumEntropyClassifier:
             tuples are history tuples <u,v,sentence,i> ,
             where sentence is an id, refers to its position on the corpus, e.g., first sentence is 0.
         """
-        # prepare for converting x,y (history-tuple and tag)
-        # into features matrix
-        X, y, sentences = [], [], []
-        for tuples, tags, sentence in iterable_sentences:
-            for i in range(len(tuples)):
-                X.append(tuples[i])
-                y.append(tags[i])
-            sentences.append(sentence)
 
-        # build features matrix
-        feature_matrix = None
-        len_dataset = len(X)
+        y_tmp = iterable_sentences.get_tags()
+        sentences = iterable_sentences.get_sentences()
 
-        for i in range(len_dataset):
-            f = build_features(X[i], y[i], sentences, Params.features_fncs)  # f shape: (m,)
-            if i == 0:
-                feature_matrix = np.array(f)  # first row, init as array
-            else:
-                feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
+        self.X = get_feature_matrix(iterable_sentences, feature_funcs)
+        self.y = np.array(y_tmp)
 
-        feature_matrix = np.array(feature_matrix)
-
-        # next we should feed both
-        #feature_matrix, np.array(y)
-        self.X = feature_matrix
-        self.y = np.array(y)
-        m = feature_matrix.shape[1]
+        m = self.X.shape[1]
         v_init = np.zeros(m)
 
         res = minimize(self.loss, v_init, method='L-BFGS-B', jac=self.grad, args=(self.X, self.y, sentences))
@@ -62,34 +47,34 @@ class MaximumEntropyClassifier:
         print(res.x)
         print(res.x.shape)
 
-    def loss(self, v, X, y, sentences):
+    def loss(self, v, sentences):
         """
-        defines softmax loss
-        :param X:
-        :param y:
+        Computes softmax loss
+        :param v:
+        :param sentences:
         :return: -log-likelihood
         """
-        loss = 0
 
         # fully vectorized computations
-        first_term = np.sum(v.dot(X.T))
+        first_term = np.sum(v.dot(self.X.transpose()))  # TODO: Check if it works
         second_term = 0
-        for i, x in enumerate(X):
-            second_term += self.compute_normalization(v,  x, sentences)
+        for i, x in enumerate(self.X):
+            second_term += self.compute_normalization(v, x, sentences)
 
-        reg = (-LAMBDA / 2) * np.sum(v**2)
+        reg = (-self.LAMBDA / 2) * np.sum(v ** 2)
 
         # L(v) = a - b - regularization
         loss = first_term - second_term - reg
 
         return loss
 
-    def compute_normalization(self, v, x, sentences):
+    @staticmethod
+    def compute_normalization(v, x, sentences):
         """
         iterates over all y's for a given X
         and compute log sum_y (e ^ (v * f(x,y))
 
-        practiaclly build f(x,y) for each y, then use broadcasting to compute v * f(x,y)
+        practically build f(x,y) for each y, then use broadcasting to compute v * f(x,y)
 
         do for each x in X and sum
         :return:
@@ -99,37 +84,35 @@ class MaximumEntropyClassifier:
         feature_matrix = None
 
         for i, pos in enumerate(poss):
-            f = build_features(x, poss[i], sentences, Params.features_fncs)  # f shape: (m,)
+            f = build_features(x, poss[i], sentences, Params.features_funcs)  # f shape: (m,)
             if i == 0:
                 feature_matrix = np.array(f)  # first row, init as array
             else:
                 feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
 
-        ret = np.log(np.sum(np.exp(v.dot(feature_matrix.T))))
+        ret = np.log(np.sum(np.exp(v.dot(feature_matrix.transpose()))))
 
         return ret
 
-    def grad(self, v, X, y, sentences):
+    def grad(self, v):
         """
         defines
-        :param X:
-        :param y:
+        :param v:
         :return:
         """
-        #loss = x*V
-        m = X.shape[1]
+        # loss = x * V
+        m = self.X.shape[1]
         # for each entry in v we should compute the gradient
         grad = np.zeros_like(v)
-
-        first_term = np.sum(self.X.T, axis=0)
+        first_term = np.sum(self.X.transpose(), axis=0)
 
         #  TODO: compute gradient
+
         return np.zeros(m)
 
-    def predict_probability(self, X):
+    def predict_probability(self, X_test):
         """
-
-        :param X: a HistoryTuple array of size (N,m)
+        :param X_test: a HistoryTuple array of size (N,m)
         :return: p(y|x;v)
         """
         pass

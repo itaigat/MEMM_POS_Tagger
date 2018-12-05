@@ -2,4 +2,4 @@ from src.utils.features import uni
 
 
 class Params:
-    features_fncs = [uni]
+    features_funcs = [uni]

@@ -1,4 +1,4 @@
-from src.utils.features import uni
+from postagger.utils.features import uni
 
 
 class Params:

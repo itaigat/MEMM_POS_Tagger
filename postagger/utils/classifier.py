@@ -1,9 +1,11 @@
-from src.utils.features import build_features
-from src.utils.params import Params
-from src.utils.common import poss
+from postagger.utils.features import build_features
+from postagger.utils.params import Params
+from postagger.utils.common import poss
 import numpy as np
 from scipy.optimize import minimize
-from src.utils.common import timeit
+from postagger.utils.common import timeit
+from time import time
+
 LAMBDA = 0
 
 class MaximumEntropyClassifier:
@@ -14,12 +16,14 @@ class MaximumEntropyClassifier:
     def __init__(self, iterable_sentences):
         # prepare for converting x,y (history-tuple and tag)
         # into features matrix
+        t1 = time()
         X, y, sentences = [], [], []
         for tuples, tags, sentence in iterable_sentences:
             for i in range(len(tuples)):
                 X.append(tuples[i])
                 y.append(tags[i])
             sentences.append(sentence)
+        print("Parsing iterables: %f s" % (time()-t1)); t2 = time()
 
         # build features matrix
         feature_matrix = None
@@ -33,15 +37,15 @@ class MaximumEntropyClassifier:
                 feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
 
         feature_matrix = np.array(feature_matrix)
+        print("Building feature matrix: %f s" % (time()-t2))
 
-        # next we should feed both
-        #feature_matrix, np.array(y)
         self.feature_matrix = feature_matrix
         self.X = X
         self.y = np.array(y)
         self.sentences = sentences
 
-    def fit(self, max_iter=1):
+    @timeit
+    def fit(self, reg=0, max_iter=1, max_fun=1):
         """
         iterable sentences:
             a tuple (tuples, tags, stripped_sentence)
@@ -53,13 +57,12 @@ class MaximumEntropyClassifier:
             tuples are history tuples <u,v,sentence,i> ,
             where sentence is an id, refers to its position on the corpus, e.g., first sentence is 0.
         """
-
         m = self.feature_matrix.shape[1]
         v_init = np.zeros(m)
 
         res = minimize(self.loss, v_init, method='L-BFGS-B', jac=self.grad,
                        args=(self.feature_matrix, self.X, self.y, self.sentences),
-                       options={'disp': 1, 'maxiter': max_iter})
+                       options={'disp': 0, 'maxiter': max_iter, 'maxfun': max_fun})
 
         if res.success:
             print("Optimization succeeded.")
@@ -76,20 +79,26 @@ class MaximumEntropyClassifier:
         :return: -log-likelihood
         """
         loss = 0
+        t1 = time()
 
         # fully vectorized computations
         first_term = np.sum(v.dot(feature_matrix.T))
+        print("Loss first term: %f s" % (time()-t1)); t2 = time()
+
         second_term = 0
         for i, x in enumerate(feature_matrix):
             second_term += self.compute_normalization(v,  self.X[i], sentences)  # TODO: fully vectorized op
+        print("Loss second term: %f s" % (time() - t2)); t3 = time()
 
-        reg = (-LAMBDA / 2) * np.sum(v**2)
+        reg = (LAMBDA / 2) * np.sum(v**2)
+        print("Loss reg: %f s" % (time() - t3)); t4 = time()
 
         # L(v) = a - b - regularization
-        loss = first_term - second_term - reg
-
         # recap goal: maximize L(v)
-        return -loss
+        loss = - (first_term - second_term - reg)
+        print("Loss final sum: %f s" % (time() - t4))
+
+        return loss
 
     def compute_normalization(self, v, x, sentences):
         """
@@ -132,17 +141,23 @@ class MaximumEntropyClassifier:
         """
         # for each entry in v we should compute the gradient
         grad = np.zeros_like(v)
+
+        t1 = time()
         first_term = np.sum(self.feature_matrix.T, axis=1)
+        print("Grad first term: %f s" % (time() - t1)); t2 = time()
+
         second_term = np.zeros_like(v)
         for i, x in enumerate(self.feature_matrix):  # TODO: fully vectorized op
             y_matrix = self.compute_y_matrix(x, sentences)  # shape (tags, features)
             probs_vec = self.predict_all_ys(v, x, y_matrix)
             second_term += (y_matrix.T).dot(probs_vec)
+        print("Grad second term: %f s" % (time() - t2)); t3 = time()
 
-        grad = first_term - second_term
+        # recap goal: maximize L(v), hence we use -grad
+        grad = -(first_term - second_term)
+        print("Grad last sum: %f s" % (time() - t3))
 
-        # recap goal: maximize L(v)
-        return -grad
+        return grad
 
     def predict_all_ys(self, v, x, y_matrix):
         """

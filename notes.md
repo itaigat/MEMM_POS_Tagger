@@ -44,11 +44,11 @@ first_grad = [-0.64444444,  1.35555556,  3.35555556, - 0.64444444, - 0.64444444,
 # warnings to take care
 ```python
 # current warnings
-# /home/deebee/PycharmProjects/MEMM_POS_Tagger/src/utils/classifier.py:99: RuntimeWarning: overflow encountered in exp
+postagger
 #   ret = np.log(np.sum(np.exp(v.dot(y_matrix.T)))
-# /home/deebee/PycharmProjects/MEMM_POS_Tagger/src/utils/classifier.py:150: RuntimeWarning: overflow encountered in exp
+postagger
 #   numerator = np.exp(v.dot(y_matrix.T))
-# /home/deebee/PycharmProjects/MEMM_POS_Tagger/src/utils/classifier.py:153: RuntimeWarning: invalid value encountered in true_divide
+postagger
 #   ret = numerator / denom
 # https://stackoverflow.com/questions/4359959/overflow-in-exp-in-scipy-numpy-in-python
 # https://stackoverflow.com/questions/14861891/runtimewarning-invalid-value-encountered-in-divide
@@ -212,7 +212,7 @@ poss = ['CC', 'CD', 'DT', 'EX', 'FW', 'IN', 'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN'
         'WDT', 'WP', 'WP$', 'WRB', '#', '$', '\'\'', '``', '(', ')', ',', '.', ':']
  ```
  
- the fit output (our vector) is currently composed of unigram features only:
+ the fit output (our vector) is currently composed of unigram features and 1 iteration only:
 
 observe our vector on different set
 

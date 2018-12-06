@@ -1,16 +1,10 @@
-Optimization succeeded.
-[0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
- 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
-(45,)
+## TODO: non-dependent tasks
 
+- start writing feature functions (bigram, trirgam)
+- write small test as a sanity check for each
 
-# FIRST LOSS
-(on train_dev.wtag, should produce feature matrix of size (29,45))
-
-0-29*np.log(45) == -110.39321220333923
-
-# FIRST GRAD
-inside tests
+- build viterbi
+- evaluate
 
 ## TODO: 6.12
 
@@ -18,23 +12,36 @@ inside tests
 - complete gradient OK
 - sanity check OK
 - converge check OK
-- complete predict prob
-- sanity check
-- train on train.wtag
-- evaluate on individual tags (not all sentence)
-
-- start building features
-- bigram, trigam
-- all of the rest from paper
+- complete predict prob (one of the inputs for viterbi) TODO
+- sanity check TODO
+- train on train.wtag TRIED(with unigram, and stopped, not efficient yet, see below)
+- evaluate on individual tags (not all sentence) SKIPPED(done "analysis as sanity check" for the meantime)
+- improve vectorized ops with sparse matrices TODO
 
 
-Other non-dependent tasks
-- build viterbi
-- evaluate
+## tests that should pass
+
+# FIRST LOSS
+(on train_dev.wtag, should produce feature matrix of size (29,45))
+
+```python
+0-29*np.log(45) == -110.39321220333923
+```
+
+# FIRST GRAD
+```python
+first_grad = [-0.64444444,  1.35555556,  3.35555556, - 0.64444444, - 0.64444444,  1.35555556,
+             2.35555556, - 0.64444444,  0.35555556, - 0.64444444, - 0.64444444,  3.35555556,
+             1.35555556,  1.35555556, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444,
+             - 0.64444444, - 0.64444444,  0.35555556, - 0.64444444, - 0.64444444, - 0.64444444,
+             0.35555556, - 0.64444444, - 0.64444444,  1.35555556, - 0.64444444,  0.35555556,
+             - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444,
+             - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444,
+             1.35555556,  1.35555556, - 0.64444444]
+```
 
 
-
-
+# warnings to take care
 ```python
 # current warnings
 # /home/deebee/PycharmProjects/MEMM_POS_Tagger/src/utils/classifier.py:99: RuntimeWarning: overflow encountered in exp
@@ -50,7 +57,18 @@ Other non-dependent tasks
 
 # ran on train.wtag 
 
-- ran more than 1 hour and didn't converge, got to 29 iterations, output:
+- ran more than 1 hour and didn't converge, stopped and got to 29 iterations, output:
+
+```python
+[-5.00536623 11.15340433 11.84649125 -5.00536623 -5.00536623 11.15340433
+ 11.55882306 -5.00536623 10.46017933 -5.00536623 -5.00536623 11.84649125
+ 11.15340433 11.15340433 -5.00536623 -5.00536623 -5.00536623 -5.00536623
+ -5.00536623 -5.00536623 10.46017933 -5.00536623 -5.00536623 -5.00536623
+ 10.46017933 -5.00536623 -5.00536623 11.15340433 -5.00536623 10.46017933
+ -5.00536623 -5.00536623 -5.00536623 -5.00536623 -5.00536623 -5.00536623
+ -5.00536623 -5.00536623 -5.00536623 -5.00536623 -5.00536623 -5.00536623
+ 11.15340433 11.15340433 -5.00536623]
+```
 
 KeyboardInterrupt
 RUNNING THE L-BFGS-B CODE
@@ -184,3 +202,56 @@ STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
  This problem is unconstrained.
 
 Process finished with exit code 0
+
+# analysis as a sanity check
+
+take a look at our tags:
+```python
+poss = ['CC', 'CD', 'DT', 'EX', 'FW', 'IN', 'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN', 'NNS', 'NNP', 'NNPS', 'PDT',
+        'POS', 'PRP', 'PRP$', 'RB', 'RBR', 'RBS', 'RP', 'SYM', 'TO', 'UH', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ',
+        'WDT', 'WP', 'WP$', 'WRB', '#', '$', '\'\'', '``', '(', ')', ',', '.', ':']
+ ```
+ 
+ the fit output (our vector) is currently composed of unigram features only:
+
+observe our vector on different set
+
+# train_dev
+```python
+[-0.4372312   0.91969321  2.27661763 -0.4372312  -0.4372312   0.91969321
+  1.59815542 -0.4372312   0.24123101 -0.4372312  -0.4372312   2.27661763
+  0.91969321  0.91969321 -0.4372312  -0.4372312  -0.4372312  -0.4372312
+ -0.4372312  -0.4372312   0.24123101 -0.4372312  -0.4372312  -0.4372312
+  0.24123101 -0.4372312  -0.4372312   0.91969321 -0.4372312   0.24123101
+ -0.4372312  -0.4372312  -0.4372312  -0.4372312  -0.4372312  -0.4372312
+ -0.4372312  -0.4372312  -0.4372312  -0.4372312  -0.4372312  -0.4372312
+  0.91969321  0.91969321 -0.4372312 ]
+```
+
+# train_dev_50
+```python
+[ 0.00613064  0.10162715  0.33506305 -0.1035135  -0.1035135   0.33152615
+  0.16529149 -0.09290277 -0.08229205 -0.1035135  -0.06460751  0.5861835
+  0.22541892  0.32091542 -0.1035135  -0.1035135  -0.07168133 -0.05045988
+ -0.06460751  0.02027827 -0.08582896 -0.1035135  -0.09290277 -0.1035135
+  0.02381518 -0.1035135   0.03088899  0.06272116  0.04503662 -0.00094318
+ -0.01509081 -0.0115539  -0.0575337  -0.09290277 -0.09290277 -0.09643968
+ -0.1035135  -0.0575337  -0.08229205 -0.08229205 -0.1035135  -0.1035135
+  0.09455333  0.06979498 -0.09290277]
+```
+
+# train_dev_500
+ ```python
+[-0.00150417  0.06914268  0.30845427 -0.09767266 -0.10248109  0.36504573
+  0.1856545  -0.09582327 -0.09397388 -0.10248109 -0.05069806  0.5348201
+  0.16346178  0.41239022 -0.10248109 -0.10211121 -0.05439684 -0.02850533
+ -0.07104139  0.05249813 -0.09471363 -0.09989194 -0.08509679 -0.10248109
+  0.01440062 -0.10211121  0.03585359  0.0565668  -0.01666921  0.01403074
+ -0.05106793  0.00367413 -0.0795486  -0.09138472 -0.1006317  -0.09286424
+ -0.10248109 -0.069192   -0.07547994 -0.07474018 -0.10248109 -0.10248109
+  0.12684377  0.07875953 -0.08768594]
+```       
+
+```
+we can see how 'DT' gets more importance because it is more common in the first set of 2 sentences, and as we increase
+the number of sentences its importances decreases.

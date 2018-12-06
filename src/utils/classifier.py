@@ -3,13 +3,14 @@ from src.utils.params import Params
 from src.utils.common import poss
 import numpy as np
 from scipy.optimize import minimize
-
+from src.utils.common import timeit
 LAMBDA = 0
 
 class MaximumEntropyClassifier:
     """
     implements MEMM, training and inference methods
     """
+    @timeit
     def __init__(self, iterable_sentences):
         # prepare for converting x,y (history-tuple and tag)
         # into features matrix
@@ -40,7 +41,7 @@ class MaximumEntropyClassifier:
         self.y = np.array(y)
         self.sentences = sentences
 
-    def fit(self):
+    def fit(self, max_iter=1):
         """
         iterable sentences:
             a tuple (tuples, tags, stripped_sentence)
@@ -58,7 +59,7 @@ class MaximumEntropyClassifier:
 
         res = minimize(self.loss, v_init, method='L-BFGS-B', jac=self.grad,
                        args=(self.feature_matrix, self.X, self.y, self.sentences),
-                       options={'disp': 1})
+                       options={'disp': 1, 'maxiter': max_iter})
 
         if res.success:
             print("Optimization succeeded.")
@@ -66,6 +67,7 @@ class MaximumEntropyClassifier:
         print(res.x)
         print(res.x.shape)
 
+    @timeit
     def loss(self, v, feature_matrix, X, y, sentences):
         """
         defines softmax loss
@@ -120,6 +122,7 @@ class MaximumEntropyClassifier:
 
         return feature_matrix
 
+    @timeit
     def grad(self, v, feature_matrix, X, y, sentences):
         """
         defines

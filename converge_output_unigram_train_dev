@@ -1,0 +1,96 @@
+/home/deebee/PycharmProjects/MEMM_POS_Tagger/venv/bin/python /home/deebee/PycharmProjects/MEMM_POS_Tagger/main.py
+Optimization succeeded.
+[-5.00536623 11.15340433 11.84649125 -5.00536623 -5.00536623 11.15340433
+ 11.55882306 -5.00536623 10.46017933 -5.00536623 -5.00536623 11.84649125
+ 11.15340433 11.15340433 -5.00536623 -5.00536623 -5.00536623 -5.00536623
+ -5.00536623 -5.00536623 10.46017933 -5.00536623 -5.00536623 -5.00536623
+ 10.46017933 -5.00536623 -5.00536623 11.15340433 -5.00536623 10.46017933
+ -5.00536623 -5.00536623 -5.00536623 -5.00536623 -5.00536623 -5.00536623
+ -5.00536623 -5.00536623 -5.00536623 -5.00536623 -5.00536623 -5.00536623
+ 11.15340433 11.15340433 -5.00536623]
+(45,)
+ This problem is unconstrained.
+RUNNING THE L-BFGS-B CODE
+
+           * * *
+
+Machine precision = 2.220D-16
+ N =           45     M =           10
+
+At X0         0 variables are exactly at the bounds
+
+At iterate    0    f=  1.10393D+02    |proj g|=  3.35556D+00
+
+At iterate    1    f=  8.51324D+01    |proj g|=  9.15883D-01
+
+At iterate    2    f=  7.82206D+01    |proj g|=  1.24658D+00
+
+At iterate    3    f=  7.59911D+01    |proj g|=  1.40720D+00
+
+At iterate    4    f=  7.49071D+01    |proj g|=  7.46065D-01
+
+At iterate    5    f=  7.41137D+01    |proj g|=  4.44530D-01
+
+At iterate    6    f=  7.39198D+01    |proj g|=  1.01396D-01
+
+At iterate    7    f=  7.37572D+01    |proj g|=  1.27565D-01
+
+At iterate    8    f=  7.36593D+01    |proj g|=  7.01727D-02
+
+At iterate    9    f=  7.36106D+01    |proj g|=  1.55635D-01
+
+At iterate   10    f=  7.35828D+01    |proj g|=  5.52810D-02
+
+At iterate   11    f=  7.35739D+01    |proj g|=  3.50779D-02
+
+At iterate   12    f=  7.35669D+01    |proj g|=  8.70487D-03
+
+At iterate   13    f=  7.35645D+01    |proj g|=  2.23283D-02
+
+At iterate   14    f=  7.35630D+01    |proj g|=  7.65280D-03
+
+At iterate   15    f=  7.35621D+01    |proj g|=  1.29659D-03
+
+At iterate   16    f=  7.35617D+01    |proj g|=  2.39857D-03
+
+At iterate   17    f=  7.35617D+01    |proj g|=  4.22581D-03
+
+At iterate   18    f=  7.35615D+01    |proj g|=  1.10334D-03
+
+At iterate   19    f=  7.35614D+01    |proj g|=  2.14665D-04
+
+At iterate   20    f=  7.35614D+01    |proj g|=  8.69659D-04
+
+At iterate   21    f=  7.35614D+01    |proj g|=  1.70569D-03
+
+At iterate   22    f=  7.35614D+01    |proj g|=  5.12047D-04
+
+At iterate   23    f=  7.35613D+01    |proj g|=  1.61376D-05
+
+At iterate   24    f=  7.35613D+01    |proj g|=  7.31496D-05
+
+At iterate   25    f=  7.35613D+01    |proj g|=  1.13227D-04
+
+           * * *
+
+Tit   = total number of iterations
+Tnf   = total number of function evaluations
+Tnint = total number of segments explored during Cauchy searches
+Skip  = number of BFGS updates skipped
+Nact  = number of active bounds at final generalized Cauchy point
+Projg = norm of the final projected gradient
+F     = final function value
+
+           * * *
+
+   N    Tit     Tnf  Tnint  Skip  Nact     Projg        F
+   45     25     30      1     0     0   1.132D-04   7.356D+01
+  F =   73.561332754738714
+
+CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH
+
+ Cauchy                time 0.000E+00 seconds.
+ Subspace minimization time 0.000E+00 seconds.
+ Line search           time 0.000E+00 seconds.
+
+ Total User time 0.000E+00 seconds.

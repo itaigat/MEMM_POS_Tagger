@@ -1,0 +1,44 @@
+Optimization succeeded.
+[0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+ 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
+(45,)
+
+
+# FIRST LOSS
+(on train_dev.wtag, should produce feature matrix of size (29,45))
+
+0-29*np.log(45) == -110.39321220333923
+
+
+## TODO: 6.12
+
+- validate loss on simple example OK
+- complete gradient OK
+- sanity check OK
+- converge check OK
+- complete predict prob
+- sanity check
+- train on train.wtag
+- evaluate on individual tags (not all sentence)
+
+- start building features
+- bigram, trigam
+- all of the rest from paper
+
+
+Other non-dependent tasks
+- build viterbi
+- evaluate
+
+
+
+
+# current warnings
+# /home/deebee/PycharmProjects/MEMM_POS_Tagger/src/utils/classifier.py:99: RuntimeWarning: overflow encountered in exp
+#   ret = np.log(np.sum(np.exp(v.dot(y_matrix.T)))
+# /home/deebee/PycharmProjects/MEMM_POS_Tagger/src/utils/classifier.py:150: RuntimeWarning: overflow encountered in exp
+#   numerator = np.exp(v.dot(y_matrix.T))
+# /home/deebee/PycharmProjects/MEMM_POS_Tagger/src/utils/classifier.py:153: RuntimeWarning: invalid value encountered in true_divide
+#   ret = numerator / denom
+# https://stackoverflow.com/questions/4359959/overflow-in-exp-in-scipy-numpy-in-python
+# https://stackoverflow.com/questions/14861891/runtimewarning-invalid-value-encountered-in-divide

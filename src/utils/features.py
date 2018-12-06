@@ -1,51 +1,36 @@
-from scipy.sparse import lil_matrix, hstack, vstack
-
+import numpy as np
 from .common import poss
 
-
-def uni(**kwargs):
+def uni(x, y, sentence):
     """
     Compose unigram features per sample
-    y: tag
+    :param x: history tuple
+    :param y: tag
+    :param sentence:
     :return: feature vector of shape (m,)
     """
-    y = kwargs['y']
-    features_matrix = lil_matrix((len(y), len(poss)))
-
+    feature = [0 for i in range(len(poss))]  # TODO : np.array
     for i, pos in enumerate(poss):
-        for label_idx, label in enumerate(y):
-            if label == pos:
-                features_matrix[label_idx, i] = 1
+        if y == pos:
+            feature[i] = 1
 
-    return features_matrix
+    return feature
 
 
-def build_features(X, y, sentences, features_funcs):
+def build_features(x, y, sentences, features_fncs):
     """
     applies predefined functions on one sample
-    :param X: history tuple <u,v,sentence,i>
+    :param x: history tuple <u,v,sentence,i>
     :param y: tag at place i
     :param sentences: list of sentences which are list of words
-    :param features_funcs: functions to apply
-    :return:
+    :param features_fncs: functions to apply
+    :return: features vector (concatenated)
     """
-    features_vec = []
-    sent_idx = X[2]
+    features_vec = []  # TODO : np.array
+    sent_idx = x[2]
     sentence = sentences[sent_idx]
+    for func in features_fncs:
+        f = func(x, y, sentence)
+        features_vec.append(f)  # TODO: np.concat
 
-    for func in features_funcs:
-        f = func(X=X, y=y, sentence=sentence)
-        features_vec.append(f)
-
-    return hstack(features_vec)
-
-
-def get_feature_matrix(iterable_sentences, features_funcs):
-    feature_matrix_lst = []
-
-    for tuples, tags, sentence in iterable_sentences:
-        for i in range(len(tuples)):
-            f = build_features(tuples[i], tags[i], sentence, features_funcs)  # f shape: (m,)
-            feature_matrix_lst.append(f)
-
-    return vstack(feature_matrix_lst)
+    return np.array(features_vec)

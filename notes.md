@@ -125,8 +125,9 @@ At iterate   28    f=  3.64267D+05    |proj g|=  1.11467D+02
 - we can see the loss still goes down
 
 # limit for 1 iteration
-# ran on train_dev_500:
+# ran on train_dev_500, output:
 
+```python
 '__init__'  8832.56 ms
 'loss'  6735.76 ms
 'grad'  6700.84 ms
@@ -141,6 +142,8 @@ At iterate   28    f=  3.64267D+05    |proj g|=  1.11467D+02
  -0.10248109 -0.069192   -0.07547994 -0.07474018 -0.10248109 -0.10248109
   0.12684377  0.07875953 -0.08768594]
 (45,)
+```
+
 RUNNING THE L-BFGS-B CODE
 
            * * *

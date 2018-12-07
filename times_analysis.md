@@ -217,3 +217,45 @@ Grad last sum: 0.000007 s
 ```
 
 * notice 'init' takes the most time now (building y_x_matrix)
+
+
+# Fully vectorized with sparse matrices building
+
+# train_dev 50
+
+```
+Parsing iterables: 0.002419 s
+Building feature matrix: 1.469293 s
+Building y_x features matrix: 79.386788 s
+'__init__'  80858.57 ms
+Loss first term: 0.000042 s
+Loss second term: 0.000767 s
+Loss reg: 0.000012 s
+Loss final sum: 0.000001 s
+'loss'  0.85 ms
+Grad first term: 0.000300 s
+Grad second term: 0.001749 s
+Grad last sum: 0.000015 s
+'grad'  2.11 ms
+Loss first term: 0.000027 s
+Loss second term: 0.001391 s
+Loss reg: 0.000010 s
+Loss final sum: 0.000001 s
+'loss'  1.45 ms
+Grad first term: 0.000171 s
+Grad second term: 0.001444 s
+Grad last sum: 0.000012 s
+'grad'  1.66 ms
+[ 0.00613064  0.10162715  0.33506305 -0.1035135  -0.1035135   0.33152615
+  0.16529149 -0.09290277 -0.08229205 -0.1035135  -0.06460751  0.5861835
+  0.22541892  0.32091542 -0.1035135  -0.1035135  -0.07168133 -0.05045988
+ -0.06460751  0.02027827 -0.08582896 -0.1035135  -0.09290277 -0.1035135
+  0.02381518 -0.1035135   0.03088899  0.06272116  0.04503662 -0.00094318
+ -0.01509081 -0.0115539  -0.0575337  -0.09290277 -0.09290277 -0.09643968
+ -0.1035135  -0.0575337  -0.08229205 -0.08229205 -0.1035135  -0.1035135
+  0.09455333  0.06979498 -0.09290277]
+(45,)
+'fit'  6.83 ms
+```
+
+* lil_matrix managed to decrease time by 1/3

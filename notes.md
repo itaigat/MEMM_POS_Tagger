@@ -16,7 +16,9 @@
 - sanity check TODO
 - train on train.wtag TRIED(with unigram, and stopped, not efficient yet, see below)
 - evaluate on individual tags (not all sentence) SKIPPED(done "analysis as sanity check" for the meantime)
-- improve vectorized ops with sparse matrices TODO
+- improve vectorized ops OK
+- switch to sparse matrices building OK
+- switch to sparse ops where needed TODO
 
 
 ## tests that should pass

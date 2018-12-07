@@ -1,4 +1,4 @@
-from postagger.utils.features import build_features
+from postagger.utils.features import build_features, build_feature_matrix, compute_y_x_matrix
 from postagger.utils.params import Params
 from postagger.utils.common import poss
 import numpy as np
@@ -36,11 +36,11 @@ class MaximumEntropyClassifier:
             sentences.append(sentence)
         print("Parsing iterables: %f s" % (time()-t1)); t2 = time()
 
-        self.feature_matrix = self.build_feature_matrix(X, y, sentences)
+        self.feature_matrix = build_feature_matrix(X, y, sentences, Params.features_fncs)
         print("Building feature matrix: %f s" % (time()-t2)); t3 = time()
 
         # compute y-x matrix (for each x in X , for each y in Y , vstack f(x,y))
-        self.y_x_matrix = self.compute_y_x_matrix(X, sentences)
+        self.y_x_matrix = compute_y_x_matrix(X, sentences, Params.features_fncs)
         print("Building y_x features matrix: %f s" % (time() - t3))
 
         self.X = X
@@ -50,40 +50,6 @@ class MaximumEntropyClassifier:
         # share between loss and grad
         self.normas = None
         self.scores = None
-
-    def compute_y_x_matrix(self, X, sentences):
-        """
-        for each x in X, compute all y's for x:
-        works by vertical stacking of shape (1,m)
-        output of shape (|Y|*|X|,m)
-        """
-        for i, x in enumerate(X):
-            for j, pos in enumerate(poss):
-                f = build_features(x, pos, sentences, Params.features_fncs)  # f shape: (m,)
-                if i == 0 and j == 0:
-                    feature_matrix = np.array(f)  # first element, init as array
-                else:
-                    feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
-
-        return feature_matrix
-
-    def build_feature_matrix(self, X, y, sentences):
-        """
-        stacks f(x_i,y_i) vertically, output shape: (|X|, m)
-        """
-        # build features matrix
-        feature_matrix = None
-        len_dataset = len(X)
-
-        for i in range(len_dataset):
-            f = build_features(X[i], y[i], sentences, Params.features_fncs)  # f shape: (m,)
-            if i == 0:
-                feature_matrix = np.array(f)  # first row, init as array
-            else:
-                feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
-
-        feature_matrix = np.array(feature_matrix)
-        return feature_matrix
 
     @timeit
     def fit(self, reg=0, max_iter=1, max_fun=1):
@@ -111,7 +77,7 @@ class MaximumEntropyClassifier:
         t1 = time()
 
         # fully vectorized computations
-        first_term = np.sum(v.dot(feature_matrix.T))
+        first_term = feature_matrix.dot(v).sum()
         print("Loss first term: %f s" % (time()-t1)); t2 = time()
 
         second_term = self.compute_loss_second_term(v, X, sentences)
@@ -148,7 +114,7 @@ class MaximumEntropyClassifier:
         grad = np.zeros_like(v)
 
         t1 = time()
-        first_term = np.sum(self.feature_matrix.T, axis=1)
+        first_term = feature_matrix.sum(axis=0)
         print("Grad first term: %f s" % (time() - t1)); t2 = time()
 
         second_term = self.compute_grad_second_term(v, X, sentences)
@@ -158,13 +124,15 @@ class MaximumEntropyClassifier:
         grad = -(first_term - second_term)
         print("Grad last sum: %f s" % (time() - t3))
 
+        grad = np.ravel(grad)
+
         return grad
 
     def compute_grad_second_term(self, v, X, sentences):
         y_x_matrix = self.y_x_matrix  # shape (|Y|*|X|, m)
         probs_matrix = self.scores / self.normas  # shape (|Y|, |X|)
         probs_matrix = probs_matrix.reshape(-1,1)  # shape (|Y|*|X|, 1)
-        product = y_x_matrix * probs_matrix  # shape (|Y|*X|, m)
+        product = y_x_matrix.multiply(probs_matrix)  # shape (|Y|*X|, m)
         grad_features = product.sum(axis=0)  # shape (m,)
         return grad_features
 

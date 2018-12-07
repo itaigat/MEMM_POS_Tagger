@@ -37,7 +37,12 @@ class MaximumEntropyClassifier:
                 feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
 
         feature_matrix = np.array(feature_matrix)
-        print("Building feature matrix: %f s" % (time()-t2))
+        print("Building feature matrix: %f s" % (time()-t2)); t3 = time()
+
+        # compute y-x matrix (for each x in X , for each y in Y , vstack f(x,y))
+        self.y_x_matrix = self.compute_y_x_matrix(X, sentences)
+        print("Building y_x features matrix: %f s" % (time() - t3))
+
 
         self.feature_matrix = feature_matrix
         self.X = X
@@ -109,9 +114,24 @@ class MaximumEntropyClassifier:
         """
         y_matrix = self.compute_y_matrix(x, sentences)
 
-        ret = np.log(np.sum(np.exp(v.dot(y_matrix.T))))
+        ret = np.log(np.sum(np.exp(v.dot(y_matrix))))
 
         return ret
+
+    def compute_y_x_matrix(self, X, sentences):
+        """
+        for each x in X, compute all y's for x:
+        works by vertical stacking of compute_y_matrix which is shape (|Y|,m)
+        output of shape (|Y|*|X|,m)
+        """
+        for i, x in enumerate(X):
+            f = self.compute_y_matrix(x, sentences)  # f shape: (m,)
+            if i == 0:
+                feature_matrix = np.array(f)  # first row, init as array
+            else:
+                feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
+
+        return feature_matrix
 
     def compute_y_matrix(self, x, sentences):
         """

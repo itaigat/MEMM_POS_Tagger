@@ -1,4 +1,4 @@
-# train_dev 50
+# train_dev 500
 ## unigram, 1 iteration
 
 ```
@@ -35,3 +35,85 @@ Grad last sum: 0.000005 s
 'fit'  26328.40 ms
 ```
 
+# train_dev 50
+
+```
+Parsing iterables: 0.002398 s
+Building feature matrix: 0.066304 s
+'__init__'  68.90 ms
+Loss first term: 0.000293 s
+Loss second term: 0.766870 s
+Loss reg: 0.000012 s
+Loss final sum: 0.000001 s
+'loss'  767.22 ms
+Grad first term: 0.000080 s
+Grad second term: 0.693533 s
+Grad last sum: 0.000005 s
+'grad'  693.67 ms
+Loss first term: 0.000233 s
+Loss second term: 0.726740 s
+Loss reg: 0.000011 s
+Loss final sum: 0.000001 s
+'loss'  727.03 ms
+Grad first term: 0.000066 s
+Grad second term: 0.690917 s
+Grad last sum: 0.000005 s
+'grad'  691.03 ms
+[ 0.00613064  0.10162715  0.33506305 -0.1035135  -0.1035135   0.33152615
+  0.16529149 -0.09290277 -0.08229205 -0.1035135  -0.06460751  0.5861835
+  0.22541892  0.32091542 -0.1035135  -0.1035135  -0.07168133 -0.05045988
+ -0.06460751  0.02027827 -0.08582896 -0.1035135  -0.09290277 -0.1035135
+  0.02381518 -0.1035135   0.03088899  0.06272116  0.04503662 -0.00094318
+ -0.01509081 -0.0115539  -0.0575337  -0.09290277 -0.09290277 -0.09643968
+ -0.1035135  -0.0575337  -0.08229205 -0.08229205 -0.1035135  -0.1035135
+  0.09455333  0.06979498 -0.09290277]
+(45,)
+'fit'  2879.84 ms
+
+Process finished with exit code 0
+```
+
+# train_dev
+
+```
+Parsing iterables: 0.000139 s
+Building feature matrix: 0.000596 s
+'__init__'  1.16 ms
+Loss first term: 0.000112 s
+Loss second term: 0.025774 s
+Loss reg: 0.000014 s
+Loss final sum: 0.000001 s
+'loss'  25.94 ms
+Grad first term: 0.000022 s
+Grad second term: 0.033934 s
+Grad last sum: 0.000008 s
+'grad'  34.02 ms
+Loss first term: 0.000024 s
+Loss second term: 0.030354 s
+Loss reg: 0.000015 s
+Loss final sum: 0.000001 s
+'loss'  30.44 ms
+Grad first term: 0.000015 s
+Grad second term: 0.018021 s
+Grad last sum: 0.000005 s
+'grad'  18.08 ms
+Loss first term: 0.000013 s
+Loss second term: 0.014998 s
+Loss reg: 0.000011 s
+Loss final sum: 0.000001 s
+'loss'  15.05 ms
+Grad first term: 0.000011 s
+Grad second term: 0.015491 s
+Grad last sum: 0.000005 s
+'grad'  15.54 ms
+[-0.4372312   0.91969321  2.27661763 -0.4372312  -0.4372312   0.91969321
+  1.59815542 -0.4372312   0.24123101 -0.4372312  -0.4372312   2.27661763
+  0.91969321  0.91969321 -0.4372312  -0.4372312  -0.4372312  -0.4372312
+ -0.4372312  -0.4372312   0.24123101 -0.4372312  -0.4372312  -0.4372312
+  0.24123101 -0.4372312  -0.4372312   0.91969321 -0.4372312   0.24123101
+ -0.4372312  -0.4372312  -0.4372312  -0.4372312  -0.4372312  -0.4372312
+ -0.4372312  -0.4372312  -0.4372312  -0.4372312  -0.4372312  -0.4372312
+  0.91969321  0.91969321 -0.4372312 ]
+(45,)
+'fit'  140.03 ms
+```

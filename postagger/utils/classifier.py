@@ -9,6 +9,7 @@ import copy
 
 LAMBDA = 0
 
+
 class MaximumEntropyClassifier:
     """
     implements MEMM, training and inference methods
@@ -118,19 +119,6 @@ class MaximumEntropyClassifier:
         ret = np.sum(ret)
         return ret
 
-    def compute_normalization(self, v, x, sentences):
-        """
-        iterates over all y's for a given x
-        practiaclly build f(x,y) for each y, then use broadcasting to compute v * f(x,y)
-
-        :return: log sum_y (e ^ (v * f(x,y))
-        """
-        y_matrix = self.compute_y_matrix(x, sentences)
-
-        ret = np.log(np.sum(np.exp(v.dot(y_matrix))))
-
-        return ret
-
     def compute_y_x_matrix(self, X, sentences):
         """
         for each x in X, compute all y's for x:
@@ -195,19 +183,6 @@ class MaximumEntropyClassifier:
         product = y_x_matrix * probs_matrix  # shape (|Y|*X|, m)
         grad_features = product.sum(axis=0)  # shape (m,)
         return grad_features
-
-    def predict_all_ys(self, v, x, y_matrix):
-        """
-        predict probability for a given x over all y's
-        :param x:
-        :return: vector of probabilities for each tag
-        """
-        numerator = np.exp(v.dot(y_matrix.T))
-        denom = np.sum(numerator)
-
-        ret = numerator / denom
-        # in first iteration (v == 0) all y's should have same prob (1/|tags| = 1/45)
-        return ret
 
     def predict_probability(self, X):
         """

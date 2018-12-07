@@ -126,29 +126,12 @@ class MaximumEntropyClassifier:
         output of shape (|Y|*|X|,m)
         """
         for i, x in enumerate(X):
-            f = self.compute_y_matrix(x, sentences)  # f shape: (m,)
-            if i == 0:
-                feature_matrix = np.array(f)  # first row, init as array
-            else:
-                feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
-
-        return feature_matrix
-
-    def compute_y_matrix(self, x, sentences):
-        """
-        helper
-        need to iterate over all possible y's for a given x
-        build its matrix iteratively
-
-        output of shape (tags, features)
-        """
-        feature_matrix = None
-        for i, pos in enumerate(poss):
-            f = build_features(x, poss[i], sentences, Params.features_fncs)  # f shape: (m,)
-            if i == 0:
-                feature_matrix = np.array(f)  # first row, init as array
-            else:
-                feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
+            for j, pos in enumerate(poss):
+                f = build_features(x, pos, sentences, Params.features_fncs)  # f shape: (m,)
+                if i == 0 and j == 0:
+                    feature_matrix = np.array(f)  # first element, init as array
+                else:
+                    feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
 
         return feature_matrix
 

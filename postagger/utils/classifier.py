@@ -5,6 +5,7 @@ import numpy as np
 from scipy.optimize import minimize
 from postagger.utils.common import timeit
 from time import time
+import copy
 
 LAMBDA = 0
 
@@ -47,6 +48,9 @@ class MaximumEntropyClassifier:
         self.X = X
         self.y = y
         self.sentences = sentences
+        # share between loss and grad
+        self.normas = None
+        self.scores = None
 
     @timeit
     def fit(self, reg=0, max_iter=1, max_fun=1):
@@ -106,7 +110,10 @@ class MaximumEntropyClassifier:
         y_x_matrix = self.y_x_matrix  # shape (|Y|*|X|, m)
         dot_prod = y_x_matrix.dot(v)  # shape (|Y|*|X|, 1)
         dot_prod = dot_prod.reshape(-1, len(X))  # shape (|Y|, |X|)
-        ret = np.sum(np.exp(dot_prod), axis=0)   # shape (|X|,)
+        dot_prod_scores = np.exp(dot_prod)
+        self.scores = copy.copy(dot_prod_scores)
+        ret = np.sum(dot_prod_scores, axis=0)   # shape (|X|,)
+        self.normas = copy.copy(ret)
         ret = np.log(ret)
         ret = np.sum(ret)
         return ret
@@ -172,11 +179,7 @@ class MaximumEntropyClassifier:
         first_term = np.sum(self.feature_matrix.T, axis=1)
         print("Grad first term: %f s" % (time() - t1)); t2 = time()
 
-        second_term = np.zeros_like(v)
-        for i, x in enumerate(self.feature_matrix):  # TODO: fully vectorized op
-            y_matrix = self.compute_y_matrix(x, sentences)  # shape (tags, features)
-            probs_vec = self.predict_all_ys(v, x, y_matrix)
-            second_term += (y_matrix.T).dot(probs_vec)
+        second_term = self.compute_grad_second_term(v, X, sentences)
         print("Grad second term: %f s" % (time() - t2)); t3 = time()
 
         # recap goal: maximize L(v), hence we use -grad
@@ -184,6 +187,14 @@ class MaximumEntropyClassifier:
         print("Grad last sum: %f s" % (time() - t3))
 
         return grad
+
+    def compute_grad_second_term(self, v, X, sentences):
+        y_x_matrix = self.y_x_matrix  # shape (|Y|*|X|, m)
+        probs_matrix = self.scores / self.normas  # shape (|Y|, |X|)
+        probs_matrix = probs_matrix.reshape(-1,1)  # shape (|Y|*|X|, 1)
+        product = y_x_matrix * probs_matrix  # shape (|Y|*X|, m)
+        grad_features = product.sum(axis=0)  # shape (m,)
+        return grad_features
 
     def predict_all_ys(self, v, x, y_matrix):
         """

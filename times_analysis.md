@@ -1,3 +1,6 @@
+# Numpy only
+##### not fully vectorized, second terms methods build y_x_matrix inplace (for each x in X)
+(1st version) commit that fits for this version is 'data': f7c878c0b54e6665e011810ffc9e679ab5c042c2
 ## unigram, 1 iteration
 
 # train_dev 500
@@ -119,6 +122,8 @@ Grad last sum: 0.000005 s
 'fit'  140.03 ms
 ```
 # Fully vectorized
+##### second terms are now vectorized, however we build the y_x feature matrix apriori in init
+(2nd version) commit that fits to this version: 'refactored clf class, added time analysis': eef0994b82e9018ee7b3342c827a681c9fd247f0
 # unigram, 1 iteration
 
 # train_dev
@@ -216,11 +221,14 @@ Grad last sum: 0.000007 s
 'fit'  41.90 ms
 ```
 
-* notice 'init' takes the most time now (building y_x_matrix)
+* notice 'init' takes the most time now (building y_x_matrix). notice this is even slower than without computing the 
+matrix apriori and using vectorized ops. I suspect the building is done in non-efficient way.
 
 
 # Fully vectorized with sparse matrices building
+##### now instead of building the features matrix and y_x_matrix in numpy we use lil
 
+(3rd version) commit that fits for this version is: 'switched to sparse matrices, added time analysis': 8029ccc98ebbf28b0c14d98f2a43fd96087e5cf1
 # train_dev 50
 
 ```
@@ -259,3 +267,54 @@ Grad last sum: 0.000012 s
 ```
 
 * lil_matrix managed to decrease time by 1/3
+
+# train dev (500)
+#### not available on previous version because I stopped it
+
+```
+Parsing iterables: 0.021956 s
+Building feature matrix: 13.309321 s
+Building y_x features matrix: 2317.049025 s
+'__init__'  2330380.38 ms
+Loss first term: 0.000096 s
+Loss second term: 0.008608 s
+Loss reg: 0.000019 s
+Loss final sum: 0.000002 s
+'loss'  8.78 ms
+Grad first term: 0.000476 s
+Grad second term: 0.018937 s
+Grad last sum: 0.000022 s
+'grad'  19.51 ms
+Loss first term: 0.000073 s
+Loss second term: 0.015334 s
+Loss reg: 0.000024 s
+Loss final sum: 0.000004 s
+'loss'  15.48 ms
+Grad first term: 0.000299 s
+Grad second term: 0.014881 s
+Grad last sum: 0.000018 s
+'grad'  15.26 ms
+[-0.00150417  0.06914268  0.30845427 -0.09767266 -0.10248109  0.36504573
+  0.1856545  -0.09582327 -0.09397388 -0.10248109 -0.05069806  0.5348201
+  0.16346178  0.41239022 -0.10248109 -0.10211121 -0.05439684 -0.02850533
+ -0.07104139  0.05249813 -0.09471363 -0.09989194 -0.08509679 -0.10248109
+  0.01440062 -0.10211121  0.03585359  0.0565668  -0.01666921  0.01403074
+ -0.05106793  0.00367413 -0.0795486  -0.09138472 -0.1006317  -0.09286424
+ -0.10248109 -0.069192   -0.07547994 -0.07474018 -0.10248109 -0.10248109
+  0.12684377  0.07875953 -0.08768594]
+(45,)
+'fit'  59.96 ms
+```
+
+* it took ~40 minutes to build fit 500 sentences for 45 unigram features
+
+- the matrix building is still very slow, compared to first version in this analysis. The bottleneck is now the
+lil matrix building, I might have built them in a wrong way.
+
+### summary (7.12)
+
+- we got 2 options:
+1. revert to first version which didn't use sparse matrices and built matrices by demand inside the minimize.
+    surprisingly this is the fastest implementation currently.
+    
+2. try to improve last version (with lil matrix), do some analysis and inspect what's going on there 

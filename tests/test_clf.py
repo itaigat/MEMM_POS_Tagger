@@ -17,7 +17,7 @@ def test_first_loss(clf, feature_matrix, X, y, sentences):
     v_init = np.zeros(m)
     loss = clf.loss(v_init, feature_matrix, X, y, sentences)
 
-    assert (loss == 110.39321220333923)
+    assert_array_almost_equal(loss, 110.39321220333923)
 
 
 def test_first_grad(clf, feature_matrix, X, y, sentences):

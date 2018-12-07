@@ -43,10 +43,9 @@ class MaximumEntropyClassifier:
         self.y_x_matrix = self.compute_y_x_matrix(X, sentences)
         print("Building y_x features matrix: %f s" % (time() - t3))
 
-
         self.feature_matrix = feature_matrix
         self.X = X
-        self.y = np.array(y)
+        self.y = y
         self.sentences = sentences
 
     @timeit
@@ -90,9 +89,7 @@ class MaximumEntropyClassifier:
         first_term = np.sum(v.dot(feature_matrix.T))
         print("Loss first term: %f s" % (time()-t1)); t2 = time()
 
-        second_term = 0
-        for i, x in enumerate(feature_matrix):
-            second_term += self.compute_normalization(v,  self.X[i], sentences)  # TODO: fully vectorized op
+        second_term = self.compute_loss_second_term(v, X, sentences)
         print("Loss second term: %f s" % (time() - t2)); t3 = time()
 
         reg = (LAMBDA / 2) * np.sum(v**2)
@@ -104,6 +101,15 @@ class MaximumEntropyClassifier:
         print("Loss final sum: %f s" % (time() - t4))
 
         return loss
+
+    def compute_loss_second_term(self, v, X, sentences):
+        y_x_matrix = self.y_x_matrix  # shape (|Y|*|X|, m)
+        dot_prod = y_x_matrix.dot(v)  # shape (|Y|*|X|, 1)
+        dot_prod = dot_prod.reshape(-1, len(X))  # shape (|Y|, |X|)
+        ret = np.sum(np.exp(dot_prod), axis=0)   # shape (|X|,)
+        ret = np.log(ret)
+        ret = np.sum(ret)
+        return ret
 
     def compute_normalization(self, v, x, sentences):
         """

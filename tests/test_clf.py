@@ -15,6 +15,8 @@ def test_first_loss(clf, feature_matrix, X, y, sentences):
 
     m = feature_matrix.shape[1]
     v_init = np.zeros(m)
+    # reg
+    clf.reg = 0
     loss = clf.loss(v_init, feature_matrix, X, y, sentences)
 
     assert_array_almost_equal(loss, 110.39321220333923)
@@ -33,6 +35,8 @@ def test_first_grad(clf, feature_matrix, X, y, sentences):
     """
     m = feature_matrix.shape[1]
     v_init = np.zeros(m)
+    # reg
+    clf.reg = 0
     out = clf.grad(v_init, feature_matrix, X, y, sentences)
     first_grad = [-0.64444444,  1.35555556,  3.35555556, - 0.64444444, - 0.64444444,  1.35555556,
                  2.35555556, - 0.64444444,  0.35555556, - 0.64444444, - 0.64444444,  3.35555556,

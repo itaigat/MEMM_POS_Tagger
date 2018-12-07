@@ -1,5 +1,6 @@
-# train_dev 500
 ## unigram, 1 iteration
+
+# train_dev 500
 
 ```
 Parsing iterables: 0.022192 s
@@ -117,3 +118,102 @@ Grad last sum: 0.000005 s
 (45,)
 'fit'  140.03 ms
 ```
+# Fully vectorized
+# unigram, 1 iteration
+
+# train_dev
+
+```
+Parsing iterables: 0.000135 s
+Building feature matrix: 0.000581 s
+Building y_x features matrix: 0.061893 s
+'__init__'  62.65 ms
+Loss first term: 0.000058 s
+Loss second term: 0.000185 s
+Loss reg: 0.000013 s
+Loss final sum: 0.000001 s
+'loss'  0.28 ms
+Grad first term: 0.000018 s
+Grad second term: 0.000213 s
+Grad last sum: 0.000006 s
+'grad'  0.27 ms
+Loss first term: 0.000018 s
+Loss second term: 0.000131 s
+Loss reg: 0.000010 s
+Loss final sum: 0.000001 s
+'loss'  0.19 ms
+Grad first term: 0.000011 s
+Grad second term: 0.000203 s
+Grad last sum: 0.000005 s
+'grad'  0.24 ms
+Loss first term: 0.000016 s
+Loss second term: 0.000145 s
+Loss reg: 0.000010 s
+Loss final sum: 0.000001 s
+'loss'  0.19 ms
+Grad first term: 0.000011 s
+Grad second term: 0.000200 s
+Grad last sum: 0.000005 s
+'grad'  0.24 ms
+Loss first term: 0.000015 s
+Loss second term: 0.000143 s
+Loss reg: 0.000009 s
+Loss final sum: 0.000001 s
+'loss'  0.19 ms
+Grad first term: 0.000010 s
+Grad second term: 0.000198 s
+Grad last sum: 0.000004 s
+'grad'  0.24 ms
+[-0.4372312   0.91969321  2.27661763 -0.4372312  -0.4372312   0.91969321
+  1.59815542 -0.4372312   0.24123101 -0.4372312  -0.4372312   2.27661763
+  0.91969321  0.91969321 -0.4372312  -0.4372312  -0.4372312  -0.4372312
+ -0.4372312  -0.4372312   0.24123101 -0.4372312  -0.4372312  -0.4372312
+  0.24123101 -0.4372312  -0.4372312   0.91969321 -0.4372312   0.24123101
+ -0.4372312  -0.4372312  -0.4372312  -0.4372312  -0.4372312  -0.4372312
+ -0.4372312  -0.4372312  -0.4372312  -0.4372312  -0.4372312  -0.4372312
+  0.91969321  0.91969321 -0.4372312 ]
+(45,)
+'fit'  2.29 ms
+
+Process finished with exit code 0
+
+```
+
+# train_dev_50
+
+```
+Parsing iterables: 0.002409 s
+Building feature matrix: 0.072239 s
+Building y_x features matrix: 237.764106 s
+'__init__'  237838.83 ms
+Loss first term: 0.000232 s
+Loss second term: 0.013207 s
+Loss reg: 0.000017 s
+Loss final sum: 0.000002 s
+'loss'  13.51 ms
+Grad first term: 0.000091 s
+Grad second term: 0.009650 s
+Grad last sum: 0.000009 s
+'grad'  9.80 ms
+Loss first term: 0.000116 s
+Loss second term: 0.007406 s
+Loss reg: 0.000015 s
+Loss final sum: 0.000002 s
+'loss'  7.58 ms
+Grad first term: 0.000078 s
+Grad second term: 0.009726 s
+Grad last sum: 0.000007 s
+'grad'  9.85 ms
+[ 0.00613064  0.10162715  0.33506305 -0.1035135  -0.1035135   0.33152615
+  0.16529149 -0.09290277 -0.08229205 -0.1035135  -0.06460751  0.5861835
+  0.22541892  0.32091542 -0.1035135  -0.1035135  -0.07168133 -0.05045988
+ -0.06460751  0.02027827 -0.08582896 -0.1035135  -0.09290277 -0.1035135
+  0.02381518 -0.1035135   0.03088899  0.06272116  0.04503662 -0.00094318
+ -0.01509081 -0.0115539  -0.0575337  -0.09290277 -0.09290277 -0.09643968
+ -0.1035135  -0.0575337  -0.08229205 -0.08229205 -0.1035135  -0.1035135
+  0.09455333  0.06979498 -0.09290277]
+(45,)
+'fit'  41.90 ms
+```
+
+* notice 'init' takes the most time now (building y_x_matrix)

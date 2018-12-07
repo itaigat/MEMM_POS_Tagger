@@ -7,8 +7,6 @@ from postagger.utils.common import timeit
 from time import time
 import copy
 
-LAMBDA = 0
-
 
 class MaximumEntropyClassifier:
     """
@@ -16,6 +14,17 @@ class MaximumEntropyClassifier:
     """
     @timeit
     def __init__(self, iterable_sentences):
+        """
+        iterable sentences:
+            a tuple (tuples, tags, stripped_sentence)
+
+            tuples: [('*', '*', 0, 0), ('*', 'DT', 0, 1),..]
+            tags: ['DT', 'NNP',...]
+            stripped_sentence: ['All', 'Nasdaq', ..]
+
+            tuples are history tuples <u,v,sentence,i> ,
+            where sentence is an id, refers to its position on the corpus, e.g., first sentence is 0.
+        """
         # prepare for converting x,y (history-tuple and tag)
         # into features matrix
         t1 = time()
@@ -27,6 +36,41 @@ class MaximumEntropyClassifier:
             sentences.append(sentence)
         print("Parsing iterables: %f s" % (time()-t1)); t2 = time()
 
+        self.feature_matrix = self.build_feature_matrix(X, y, sentences)
+        print("Building feature matrix: %f s" % (time()-t2)); t3 = time()
+
+        # compute y-x matrix (for each x in X , for each y in Y , vstack f(x,y))
+        self.y_x_matrix = self.compute_y_x_matrix(X, sentences)
+        print("Building y_x features matrix: %f s" % (time() - t3))
+
+        self.X = X
+        self.y = y
+        self.sentences = sentences
+        self.reg = None
+        # share between loss and grad
+        self.normas = None
+        self.scores = None
+
+    def compute_y_x_matrix(self, X, sentences):
+        """
+        for each x in X, compute all y's for x:
+        works by vertical stacking of shape (1,m)
+        output of shape (|Y|*|X|,m)
+        """
+        for i, x in enumerate(X):
+            for j, pos in enumerate(poss):
+                f = build_features(x, pos, sentences, Params.features_fncs)  # f shape: (m,)
+                if i == 0 and j == 0:
+                    feature_matrix = np.array(f)  # first element, init as array
+                else:
+                    feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
+
+        return feature_matrix
+
+    def build_feature_matrix(self, X, y, sentences):
+        """
+        stacks f(x_i,y_i) vertically, output shape: (|X|, m)
+        """
         # build features matrix
         feature_matrix = None
         len_dataset = len(X)
@@ -39,36 +83,15 @@ class MaximumEntropyClassifier:
                 feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
 
         feature_matrix = np.array(feature_matrix)
-        print("Building feature matrix: %f s" % (time()-t2)); t3 = time()
-
-        # compute y-x matrix (for each x in X , for each y in Y , vstack f(x,y))
-        self.y_x_matrix = self.compute_y_x_matrix(X, sentences)
-        print("Building y_x features matrix: %f s" % (time() - t3))
-
-        self.feature_matrix = feature_matrix
-        self.X = X
-        self.y = y
-        self.sentences = sentences
-        # share between loss and grad
-        self.normas = None
-        self.scores = None
+        return feature_matrix
 
     @timeit
     def fit(self, reg=0, max_iter=1, max_fun=1):
-        """
-        iterable sentences:
-            a tuple (tuples, tags, stripped_sentence)
-
-            tuples: [('*', '*', 0, 0), ('*', 'DT', 0, 1),..]
-            tags: ['DT', 'NNP',...]
-            stripped_sentence: ['All', 'Nasdaq', ..]
-
-            tuples are history tuples <u,v,sentence,i> ,
-            where sentence is an id, refers to its position on the corpus, e.g., first sentence is 0.
-        """
+        self.reg = reg
         m = self.feature_matrix.shape[1]
         v_init = np.zeros(m)
 
+        # design note: minimize takes its own args (hence we pass loss, grad params without using self)
         res = minimize(self.loss, v_init, method='L-BFGS-B', jac=self.grad,
                        args=(self.feature_matrix, self.X, self.y, self.sentences),
                        options={'disp': 0, 'maxiter': max_iter, 'maxfun': max_fun})
@@ -82,10 +105,7 @@ class MaximumEntropyClassifier:
     @timeit
     def loss(self, v, feature_matrix, X, y, sentences):
         """
-        defines softmax loss
-        :param X:
-        :param y:
-        :return: -log-likelihood
+        fully vectorized MLE loss
         """
         loss = 0
         t1 = time()
@@ -97,7 +117,7 @@ class MaximumEntropyClassifier:
         second_term = self.compute_loss_second_term(v, X, sentences)
         print("Loss second term: %f s" % (time() - t2)); t3 = time()
 
-        reg = (LAMBDA / 2) * np.sum(v**2)
+        reg = (self.reg / 2) * np.sum(v**2)
         print("Loss reg: %f s" % (time() - t3)); t4 = time()
 
         # L(v) = a - b - regularization
@@ -119,29 +139,10 @@ class MaximumEntropyClassifier:
         ret = np.sum(ret)
         return ret
 
-    def compute_y_x_matrix(self, X, sentences):
-        """
-        for each x in X, compute all y's for x:
-        works by vertical stacking of compute_y_matrix which is shape (|Y|,m)
-        output of shape (|Y|*|X|,m)
-        """
-        for i, x in enumerate(X):
-            for j, pos in enumerate(poss):
-                f = build_features(x, pos, sentences, Params.features_fncs)  # f shape: (m,)
-                if i == 0 and j == 0:
-                    feature_matrix = np.array(f)  # first element, init as array
-                else:
-                    feature_matrix = np.vstack((feature_matrix, np.array(f)))  # add another row to matrix
-
-        return feature_matrix
-
     @timeit
     def grad(self, v, feature_matrix, X, y, sentences):
         """
-        defines
-        :param X:
-        :param y:
-        :return:
+        Fully vectorized grad computation
         """
         # for each entry in v we should compute the gradient
         grad = np.zeros_like(v)

@@ -6,7 +6,7 @@ from scipy.optimize import minimize
 from postagger.utils.common import timeit
 from time import time
 import copy
-
+from postagger.utils.features_callables import build_y_x_matrix, Paramsb
 
 class MaximumEntropyClassifier:
     """
@@ -40,7 +40,15 @@ class MaximumEntropyClassifier:
         print("Building feature matrix: %f s" % (time()-t2)); t3 = time()
 
         # compute y-x matrix (for each x in X , for each y in Y , vstack f(x,y))
-        self.y_x_matrix = compute_y_x_matrix(X, sentences, Params.features_fncs)
+        #self.y_x_matrix = compute_y_x_matrix(X, sentences, Params.features_fncs)
+
+        callables = []
+        for f in Paramsb.features_fncs:
+            if f.name == 'unigram':
+                arg = poss
+            callables.append(f(arg))
+        self.y_x_matrix = build_y_x_matrix(X, poss, sentences, callables)
+
         print("Building y_x features matrix: %f s" % (time() - t3))
 
         self.X = X

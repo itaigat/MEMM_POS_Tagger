@@ -1,5 +1,6 @@
 import time
-
+import os
+from os.path import join, dirname
 
 def read_file(file_path):
     """
@@ -14,11 +15,6 @@ def read_file(file_path):
         print('Could not find file in the path')
     except Exception as e:
         print(e)
-
-
-poss = ['CC', 'CD', 'DT', 'EX', 'FW', 'IN', 'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN', 'NNS', 'NNP', 'NNPS', 'PDT',
-        'POS', 'PRP', 'PRP$', 'RB', 'RBR', 'RBS', 'RP', 'SYM', 'TO', 'UH', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ',
-        'WDT', 'WP', 'WP$', 'WRB', '#', '$', '\'\'', '``', '(', ')', ',', '.', ':']
 
 
 def timeit(method):
@@ -36,3 +32,18 @@ def timeit(method):
         return result
 
     return timed
+
+
+def get_data_path(data_file='train_dev.wtag'):
+
+    if os.name == 'nt':
+        path = join(dirname(os.getcwd()), 'resources', data_file)
+    else:
+        path = join(os.getcwd(), 'resources', data_file)
+
+    return path
+
+
+poss = ['CC', 'CD', 'DT', 'EX', 'FW', 'IN', 'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN', 'NNS', 'NNP', 'NNPS', 'PDT',
+        'POS', 'PRP', 'PRP$', 'RB', 'RBR', 'RBS', 'RP', 'SYM', 'TO', 'UH', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ',
+        'WDT', 'WP', 'WP$', 'WRB', '#', '$', '\'\'', '``', '(', ')', ',', '.', ':']

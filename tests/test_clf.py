@@ -51,3 +51,11 @@ def test_first_grad(clf, feature_matrix, X, y, sentences):
 
     # up to 6 decimal dots
     assert_array_almost_equal (out, first_grad)
+
+
+def run_clf_tests(clf, feature_matrix, X, y, sentences):
+    """
+    run all classifier tests
+    """
+    test_first_loss(clf, feature_matrix, X, y, sentences)
+    test_first_grad(clf, feature_matrix, X, y, sentences)

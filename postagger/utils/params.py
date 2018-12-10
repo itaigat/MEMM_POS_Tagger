@@ -1,5 +1,5 @@
-from postagger.utils.features import uni
+from postagger.utils.features import Unigram
 
 
 class Params:
-    features_fncs = [uni]
+    features_fncs = [Unigram]

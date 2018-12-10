@@ -1,74 +1,126 @@
-import numpy as np
-from .common import poss
-from scipy.sparse import lil_matrix, hstack, vstack, csr_matrix
+from abc import ABC, abstractmethod
+from scipy.sparse import csr_matrix
 
 
-def uni(x, y, sentence):
+class FeatureFunction(ABC):
     """
-    Compose unigram features per sample
-    :param x: history tuple
-    :param y: tag
-    :param sentence:
-    :return: feature vector of shape (m,)
+    abstract class to hold the feature function and its output size
+    needed for computing the shape of the matrix ahead of time (sparse)
     """
-    lil_mtx_shape = (len(poss), 1)
-    feature_vec = lil_matrix(lil_mtx_shape)
+    def __init__(self):
+        self.m = self.compute_size()
 
-    # unigram: search for index of current y
-    # i = unigram_dict[y]  # fails for tags not on train_dev
-    for i, pos in enumerate(poss):
-        if y == pos:
-            feature_vec[i] = 1
+    @abstractmethod
+    def compute_size(self):
+        """:return: feature vector size """
+        pass
 
-    return feature_vec.transpose()
+    @abstractmethod
+    def __call__(self, *args, **kwargs):
+        """actual feature function - applied per sample
+        :return: lists (data, row, col)"""
+        pass
 
 
-def build_features(x, y, sentences, features_fncs):
+class Unigram(FeatureFunction):
     """
-    applies predefined functions on one sample
-    :param x: history tuple <u,v,sentence,i>
-    :param y: tag at place i
-    :param sentences: list of sentences which are list of words
-    :param features_fncs: functions to apply
-    :return: features vector (concatenated)
+    unigram features, takes tags list as parameter
     """
-    features_vec = lil_matrix((0,0))
-    sent_idx = x[2]
-    sentence = sentences[sent_idx]
-    for func in features_fncs:
-        f = func(x, y, sentence)
-        # assumes func outputs sparse vectors in shape (1,features_num)
-        features_vec = hstack([features_vec, f])
+    name = 'unigram'
 
-    # sparse vector of shape (1,total_features_num)
-    return features_vec
+    def __init__(self, poss):
+        self.tags = poss
+        super().__init__()
+
+    def compute_size(self):
+        return len(self.tags)
+
+    def __call__(self, *args, **kwargs):
+        # unpack needed vars
+        data, i, j = [], [], []
+        y = kwargs['y']
+        if y in self.tags:
+            index = self.tags.index(y)
+            data.append(1)
+            # relative indices (will be shifted later)
+            i.append(0)  # this will always be 0 since we compute a row vector
+            j.append(index)
+
+        return data, i, j
 
 
-def compute_y_x_matrix(X, sentences, features_fncs):
-    """ SPARSE
-    for each x in X, compute all y's for x:
-    works by vertical stacking of shape (1,m)
-    output of shape (|Y|*|X|,m)
+def build_features(x, y, sentences, features_fncs, i_shift=0):
+    """applies predefined functions on one sample
+    returns shifted (corrected) data,i,j
+
+    i_shift is the row number, calling function is responsible setting it
     """
-    feature_matrix = lil_matrix((0,0))
+    data, i, j = [], [], []
+    for ind, f in enumerate(features_fncs):
+        j_shift = f.m
+        cur_data, cur_i, cur_j = f(y=y)
+        # shift j (only if not first feature)
+        if ind != 0:
+            cur_j = [x+j_shift for x in cur_j]
+        cur_i = [x+i_shift for x in cur_i]
+        # append
+        data += cur_data
+        i += cur_i
+        j += cur_j
+
+    return data, i, j
+
+
+def build_y_x_matrix(X, poss, sentences, feature_fncs):
+    """build y_x feature matrix in coo format
+
+    output shape: (|Y|*|X|, m)
+    """
+    # get size
+    m = 0
+    for f in feature_fncs:
+        m += f.m
+
+    matrix_shape = (len(X)*len(poss), m)
+
+    # build features matrix
+    current_row = 0
+    data, row, col = [], [], []
     for i, x in enumerate(X):
         for j, pos in enumerate(poss):
-            f = build_features(x, pos, sentences, features_fncs)  # f shape: (m,)
-            feature_matrix = vstack([feature_matrix, f])  # add another row to matrix
+            cur_data, cur_i, cur_j = build_features(x, pos, sentences, feature_fncs, i_shift=current_row)
+            # append
+            data += cur_data
+            row += cur_i
+            col += cur_j
+            current_row += 1
 
-    return csr_matrix(feature_matrix)
+    matrix = csr_matrix((data, (row, col)), shape=matrix_shape)
+
+    return matrix
 
 
-def build_feature_matrix(X, y, sentences, features_fncs):
-    """ SPARSE
-    stacks f(x_i,y_i) vertically, output shape: (|X|, m)
+def build_feature_matrix_(X, y, sentences, feature_fncs):
     """
+    build feature matrix from training set, i.e., for each (x_i, y_i)
+    output shape: (|X|, m)
+    """
+    # get size
+    m = 0
+    for f in feature_fncs:
+        m += f.m
+
+    matrix_shape = (len(X), m)
+
     # build features matrix
-    feature_matrix = lil_matrix((0, 0))
-    len_dataset = len(X)
+    data, row, col = [], [], []
+    for i, x in enumerate(X):
+        cur_data, cur_i, cur_j = build_features(x, y[i], sentences, feature_fncs, i_shift=i)
+        # append
+        data += cur_data
+        row += cur_i
+        col += cur_j
 
-    for i in range(len_dataset):
-        f = build_features(X[i], y[i], sentences, features_fncs)  # f shape: (m,)
-        feature_matrix = vstack([feature_matrix, f])  # add another row to matrix
+    matrix = csr_matrix((data, (row, col)), shape=matrix_shape)
 
-    return csr_matrix(feature_matrix)
+    return matrix

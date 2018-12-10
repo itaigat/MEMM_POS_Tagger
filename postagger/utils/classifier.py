@@ -1,4 +1,3 @@
-from postagger.utils.features import build_features, build_feature_matrix, compute_y_x_matrix
 from postagger.utils.params import Params
 from postagger.utils.common import poss
 import numpy as np
@@ -6,7 +5,7 @@ from scipy.optimize import minimize
 from postagger.utils.common import timeit
 from time import time
 import copy
-from postagger.utils.features_callables import build_y_x_matrix, Paramsb
+from postagger.utils.features import build_y_x_matrix, build_feature_matrix_
 
 class MaximumEntropyClassifier:
     """
@@ -36,19 +35,18 @@ class MaximumEntropyClassifier:
             sentences.append(sentence)
         print("Parsing iterables: %f s" % (time()-t1)); t2 = time()
 
-        self.feature_matrix = build_feature_matrix(X, y, sentences, Params.features_fncs)
-        print("Building feature matrix: %f s" % (time()-t2)); t3 = time()
-
-        # compute y-x matrix (for each x in X , for each y in Y , vstack f(x,y))
-        #self.y_x_matrix = compute_y_x_matrix(X, sentences, Params.features_fncs)
-
+        # init callable features
         callables = []
-        for f in Paramsb.features_fncs:
+        for f in Params.features_fncs:
             if f.name == 'unigram':
                 arg = poss
             callables.append(f(arg))
-        self.y_x_matrix = build_y_x_matrix(X, poss, sentences, callables)
 
+        # build matrices
+        self.feature_matrix = build_feature_matrix_(X, y, sentences, callables)
+        print("Building feature matrix: %f s" % (time() - t2));t3 = time()
+
+        self.y_x_matrix = build_y_x_matrix(X, poss, sentences, callables)
         print("Building y_x features matrix: %f s" % (time() - t3))
 
         self.X = X
@@ -60,7 +58,7 @@ class MaximumEntropyClassifier:
         self.scores = None
 
     @timeit
-    def fit(self, reg=0, max_iter=1, max_fun=1):
+    def fit(self, reg=0, max_iter=30, verbose=0):
         self.reg = reg
         m = self.feature_matrix.shape[1]
         v_init = np.zeros(m)
@@ -68,7 +66,7 @@ class MaximumEntropyClassifier:
         # design note: minimize takes its own args (hence we pass loss, grad params without using self)
         res = minimize(self.loss, v_init, method='L-BFGS-B', jac=self.grad,
                        args=(self.feature_matrix, self.X, self.y, self.sentences),
-                       options={'disp': 0, 'maxiter': max_iter, 'maxfun': max_fun})
+                       options={'disp': verbose, 'maxiter': max_iter})
 
         if res.success:
             print("Optimization succeeded.")
@@ -79,7 +77,7 @@ class MaximumEntropyClassifier:
     @timeit
     def loss(self, v, feature_matrix, X, y, sentences):
         """
-        fully vectorized MLE loss
+        MLE loss
         """
         loss = 0
         t1 = time()
@@ -102,8 +100,10 @@ class MaximumEntropyClassifier:
         return loss
 
     def compute_loss_second_term(self, v, X, sentences):
+        """helper"""
         y_x_matrix = self.y_x_matrix  # shape (|Y|*|X|, m)
         dot_prod = y_x_matrix.dot(v)  # shape (|Y|*|X|, 1)
+        # TODO: fix numeric stability, currently solved by regularization
         dot_prod = dot_prod.reshape(-1, len(X))  # shape (|Y|, |X|)
         dot_prod_scores = np.exp(dot_prod)
         self.scores = copy.copy(dot_prod_scores)
@@ -137,8 +137,9 @@ class MaximumEntropyClassifier:
         return grad
 
     def compute_grad_second_term(self, v, X, sentences):
+        """helper"""
         y_x_matrix = self.y_x_matrix  # shape (|Y|*|X|, m)
-        probs_matrix = self.scores / self.normas  # shape (|Y|, |X|)
+        probs_matrix = self.scores / self.normas  # shape (|Y|, |X|)  # TODO: fix numeric issues
         probs_matrix = probs_matrix.reshape(-1,1)  # shape (|Y|*|X|, 1)
         product = y_x_matrix.multiply(probs_matrix)  # shape (|Y|*X|, m)
         grad_features = product.sum(axis=0)  # shape (m,)

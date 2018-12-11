@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
+
 def test_first_loss(clf, feature_matrix, X, y, sentences):
     """
     test first loss evaluation on train_dev.wtag (unigram features)
@@ -50,15 +51,15 @@ def test_first_loss_grad_nonzero_v(clf, feature_matrix, X, y, sentences):
     v_init = np.ones(m)
     v_init[0] = 0.5
     # loss
-    first_term = 0.5+1
-    second_term = 2*np.log(np.exp(0.5)+np.exp(1))
+    first_term = 0.5 + 1
+    second_term = 2 * np.log(np.exp(0.5) + np.exp(1))
     first_loss = -(first_term - second_term)
     out = clf.loss(v_init, feature_matrix, X, y, sentences)
     assert_array_almost_equal(out, first_loss)
     # grad
     p0 = np.exp(0.5) / (np.exp(0.5) + np.exp(1))
-    p1 = 1-p0
-    first_grad = [-(1-2*p0), -(1-2*p1)]
+    p1 = 1 - p0
+    first_grad = [-(1 - 2 * p0), -(1 - 2 * p1)]
     out = clf.grad(v_init, feature_matrix, X, y, sentences)
     assert_array_almost_equal(out, first_grad)
 
@@ -79,25 +80,25 @@ def test_first_grad(clf, feature_matrix, X, y, sentences):
     # reg
     clf.reg = 0
     out = clf.grad(v_init, feature_matrix, X, y, sentences)
-    first_grad = [-0.64444444,  1.35555556,  3.35555556, - 0.64444444, - 0.64444444,  1.35555556,
-                 2.35555556, - 0.64444444,  0.35555556, - 0.64444444, - 0.64444444,  3.35555556,
-                 1.35555556,  1.35555556, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444,
-                 - 0.64444444, - 0.64444444,  0.35555556, - 0.64444444, - 0.64444444, - 0.64444444,
-                 0.35555556, - 0.64444444, - 0.64444444,  1.35555556, - 0.64444444,  0.35555556,
-                 - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444,
-                 - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444,
-                 1.35555556,  1.35555556, - 0.64444444]
+    first_grad = [-0.64444444, 1.35555556, 3.35555556, - 0.64444444, - 0.64444444, 1.35555556,
+                  2.35555556, - 0.64444444, 0.35555556, - 0.64444444, - 0.64444444, 3.35555556,
+                  1.35555556, 1.35555556, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444,
+                  - 0.64444444, - 0.64444444, 0.35555556, - 0.64444444, - 0.64444444, - 0.64444444,
+                  0.35555556, - 0.64444444, - 0.64444444, 1.35555556, - 0.64444444, 0.35555556,
+                  - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444,
+                  - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444, - 0.64444444,
+                  1.35555556, 1.35555556, - 0.64444444]
     first_grad = np.array(first_grad)
     first_grad = -1 * first_grad
 
     # up to 6 decimal dots
-    assert_array_almost_equal (out, first_grad)
+    assert_array_almost_equal(out, first_grad)
 
 
 def run_clf_tests(clf, feature_matrix, X, y, sentences):
     """
     run all classifier tests
     """
-    #test_first_loss_(clf, feature_matrix, X, y, sentences)
-    #test_first_grad_(clf, feature_matrix, X, y, sentences)
+    # test_first_loss_(clf, feature_matrix, X, y, sentences)
+    # test_first_grad_(clf, feature_matrix, X, y, sentences)
     test_first_loss_grad_nonzero_v(clf, feature_matrix, X, y, sentences)

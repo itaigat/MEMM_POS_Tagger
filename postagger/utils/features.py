@@ -49,14 +49,14 @@ class Unigram(FeatureFunction):
         return data, i, j
 
 
-def build_features(x, y, sentences, features_fncs, i_shift=0):
+def build_features(X, y, sentences, features_functions, i_shift=0):
     """applies predefined functions on one sample
     returns shifted (corrected) data,i,j
 
     i_shift is the row number, calling function is responsible setting it
     """
     data, i, j = [], [], []
-    for ind, f in enumerate(features_fncs):
+    for ind, f in enumerate(features_functions):
         j_shift = f.m
         cur_data, cur_i, cur_j = f(y=y)
         # shift j (only if not first feature)
@@ -71,14 +71,14 @@ def build_features(x, y, sentences, features_fncs, i_shift=0):
     return data, i, j
 
 
-def build_y_x_matrix(X, poss, sentences, feature_fncs):
+def build_y_x_matrix(X, poss, sentences, feature_functions):
     """build y_x feature matrix in coo format
 
     output shape: (|Y|*|X|, m)
     """
     # get size
     m = 0
-    for f in feature_fncs:
+    for f in feature_functions:
         m += f.m
 
     matrix_shape = (len(X)*len(poss), m)
@@ -88,7 +88,7 @@ def build_y_x_matrix(X, poss, sentences, feature_fncs):
     data, row, col = [], [], []
     for i, x in enumerate(X):
         for j, pos in enumerate(poss):
-            cur_data, cur_i, cur_j = build_features(x, pos, sentences, feature_fncs, i_shift=current_row)
+            cur_data, cur_i, cur_j = build_features(x, pos, sentences, feature_functions, i_shift=current_row)
             # append
             data += cur_data
             row += cur_i

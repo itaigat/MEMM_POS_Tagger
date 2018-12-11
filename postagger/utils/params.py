@@ -2,4 +2,4 @@ from postagger.utils.features import Unigram
 
 
 class Params:
-    features_fncs = [Unigram]
+    features_functions = [Unigram]

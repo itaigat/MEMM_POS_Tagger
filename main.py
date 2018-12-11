@@ -12,7 +12,8 @@ def main(argv):
     clf = MaximumEntropyClassifier(iterable_sentences)
     # tests (pass on train_dev and unigram features only): CURRENTLY BREAKS (fix of numeric issues)
     # run_clf_tests(clf, clf.feature_matrix, clf.X, clf.y, clf.sentences)
-    clf.fit(reg=100, max_iter=10, verbose=1)
+    v = clf.fit(reg=100, max_iter=10, verbose=1)
+    # y = clf.predict(iterable_sentences, v)
 
 
 if __name__ == '__main__':

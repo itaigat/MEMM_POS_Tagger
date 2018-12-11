@@ -1,5 +1,5 @@
 from .common import read_file
-import numpy as np
+
 
 class Dataset(object):
     """Class that iterates over Dataset
@@ -7,7 +7,7 @@ class Dataset(object):
         lst: list of words/tags
         sentence: the text of the sentence
     If processing_word and processing_tag are not None,
-    optional preprocessing is applied
+    optional pre-processing is applied
     Example:
         ```python
         data = Dataset(filename)
@@ -74,13 +74,12 @@ class CompData(Dataset):
                 stripped_sentence.append(word_stripped)
 
             for i, word_tag_tuple in enumerate(word_tag_tuples):
-                word = word_tag_tuple[0]
                 tag = word_tag_tuple[1]
                 tags.append(tag)
                 if i == 0:
                     tuples.append(('*', '*', sent_id, i))
                 elif i == 1:
-                    tuples.append(('*', word_tag_tuples[i-1][1], sent_id, i))
+                    tuples.append(('*', word_tag_tuples[i - 1][1], sent_id, i))
                 else:
                     u = word_tag_tuples[i - 2][1]  # pre pre tag
                     v = word_tag_tuples[i - 1][1]  # pre tag

@@ -7,6 +7,8 @@ from time import time
 import copy
 from postagger.utils.features import build_y_x_matrix, build_feature_matrix_
 
+epsilon=0  # fixes numeric issues, breaks clf tests
+
 class MaximumEntropyClassifier:
     """
     implements MEMM, training and inference methods
@@ -52,7 +54,7 @@ class MaximumEntropyClassifier:
         self.X = X
         self.y = y
         self.sentences = sentences
-        self.reg = None
+        self.reg = 0
         # share between loss and grad
         self.normas = None
         self.scores = None
@@ -74,7 +76,6 @@ class MaximumEntropyClassifier:
         print(res.x)
         print(res.x.shape)
 
-    @timeit
     def loss(self, v, feature_matrix, X, y, sentences):
         """
         MLE loss
@@ -96,24 +97,25 @@ class MaximumEntropyClassifier:
         # recap goal: maximize L(v)
         loss = - (first_term - second_term - reg)
         print("Loss final sum: %f s" % (time() - t4))
-
+        print(loss)
         return loss
 
     def compute_loss_second_term(self, v, X, sentences):
         """helper"""
         y_x_matrix = self.y_x_matrix  # shape (|Y|*|X|, m)
         dot_prod = y_x_matrix.dot(v)  # shape (|Y|*|X|, 1)
-        # TODO: fix numeric stability, currently solved by regularization
         dot_prod = dot_prod.reshape(-1, len(X))  # shape (|Y|, |X|)
+        # fixes numeric issues, break tests
+        # max_point = dot_prod.max()
+        # dot_prod = dot_prod - max_point
         dot_prod_scores = np.exp(dot_prod)
         self.scores = copy.copy(dot_prod_scores)
-        ret = np.sum(dot_prod_scores, axis=0)   # shape (|X|,)
+        ret = np.sum(dot_prod_scores, axis=1)   # shape (|X|,)
         self.normas = copy.copy(ret)
-        ret = np.log(ret)
+        ret = np.log(ret+epsilon)  # numeric issues
         ret = np.sum(ret)
         return ret
 
-    @timeit
     def grad(self, v, feature_matrix, X, y, sentences):
         """
         Fully vectorized grad computation
@@ -139,7 +141,7 @@ class MaximumEntropyClassifier:
     def compute_grad_second_term(self, v, X, sentences):
         """helper"""
         y_x_matrix = self.y_x_matrix  # shape (|Y|*|X|, m)
-        probs_matrix = self.scores / self.normas  # shape (|Y|, |X|)  # TODO: fix numeric issues
+        probs_matrix = self.scores / self.normas.reshape(-1,1)  # shape (|Y|, |X|)
         probs_matrix = probs_matrix.reshape(-1,1)  # shape (|Y|*|X|, 1)
         product = y_x_matrix.multiply(probs_matrix)  # shape (|Y|*X|, m)
         grad_features = product.sum(axis=0)  # shape (m,)

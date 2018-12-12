@@ -66,7 +66,7 @@ class MaximumEntropyClassifier:
         self.scores = None
 
     @timeit
-    def fit(self, reg=0, max_iter=30, verbose=0):
+    def fit(self, reg=0, verbose=0):
         self.reg = reg
         m = self.feature_matrix.shape[1]
         v_init = np.zeros(m)
@@ -74,7 +74,7 @@ class MaximumEntropyClassifier:
         # design note: minimize takes its own args (hence we pass loss, grad params without using self)
         res = minimize(self.loss, v_init, method='L-BFGS-B', jac=self.grad,
                        args=(self.feature_matrix, self.X, self.y, self.sentences),
-                       options={'disp': verbose, 'maxiter': max_iter})
+                       options={'disp': verbose})
 
         if res.success:
             print("Optimization succeeded.")
@@ -115,8 +115,8 @@ class MaximumEntropyClassifier:
         dot_prod = y_x_matrix.dot(v)  # shape (|Y|*|X|, 1)
         dot_prod = dot_prod.reshape(-1, len(X))  # shape (|Y|, |X|)
         # fixes numeric issues, break tests
-        # max_point = dot_prod.max()
-        # dot_prod = dot_prod - max_point
+        max_point = dot_prod.max()
+        dot_prod = dot_prod - max_point
         dot_prod_scores = np.exp(dot_prod)
         self.scores = copy.copy(dot_prod_scores)
         ret = np.sum(dot_prod_scores, axis=1)  # shape (|X|,)
@@ -141,8 +141,10 @@ class MaximumEntropyClassifier:
         print("Grad second term: %f s" % (time() - t2))
         t3 = time()
 
+        reg_grad = np.sum(v)
+
         # recap goal: maximize L(v), hence we use -grad
-        grad = -(first_term - second_term)
+        grad = -(first_term - second_term + reg_grad)
         print("Grad last sum: %f s" % (time() - t3))
 
         grad = np.ravel(grad)

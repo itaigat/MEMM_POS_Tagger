@@ -7,7 +7,7 @@ class Dataset(object):
         lst: list of words/tags
         sentence: the text of the sentence
     If processing_word and processing_tag are not None,
-    optional preprocessing is applied
+    optional pre-processing is applied
     Example:
         ```python
         data = Dataset(filename)
@@ -74,7 +74,6 @@ class CompData(Dataset):
                 stripped_sentence.append(word_stripped)
 
             for i, word_tag_tuple in enumerate(word_tag_tuples):
-                # word = word_tag_tuple[0]
                 tag = word_tag_tuple[1]
                 tags.append(tag)
                 if i == 0:
@@ -87,20 +86,3 @@ class CompData(Dataset):
                     tuples.append((u, v, sent_id, i))
 
             yield tuples, tags, stripped_sentence
-
-    def get_tags(self):
-        tags_tmp = []
-
-        for tuples, tags, sentence in self:
-            for i in range(len(tuples)):
-                tags_tmp.append(tags[i])
-
-        return tags_tmp
-
-    def get_sentences(self):
-        sentences_tmp = []
-
-        for tuples, tags, sentence in self:
-            sentences_tmp.append(sentence)
-
-        return sentences_tmp

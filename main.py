@@ -1,14 +1,19 @@
-import os
-from os.path import join, dirname
+import sys
+from postagger.utils.decoder import CompData
+from postagger.utils.classifier import MaximumEntropyClassifier
+from postagger.utils.common import timeit, get_data_path
+from tests.test_clf import run_clf_tests
 
-from src.utils.decoder import CompData
-from src.utils.classifier import MaximumEntropyClassifier
 
-if os.name == 'nt':
-    path = join(dirname(os.getcwd()), 'resources', 'train_dev.wtag')
-else:
-    path = join(os.getcwd(), 'resources', 'train_dev.wtag')
+@timeit
+def main(argv):
+    path = get_data_path('train.wtag')
+    iterable_sentences = CompData(path)
+    clf = MaximumEntropyClassifier(iterable_sentences)
+    # tests (pass on train_dev and unigram features only): CURRENTLY BREAKS (fix of numeric issues)
+    #run_clf_tests(clf, clf.feature_matrix, clf.X, clf.y, clf.sentences)
+    clf.fit(reg=10, verbose=1)
 
-iterable_sentences = CompData(path)
-clf = MaximumEntropyClassifier()
-clf.fit(iterable_sentences)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

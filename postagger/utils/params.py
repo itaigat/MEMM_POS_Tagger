@@ -1,5 +1,7 @@
-from postagger.utils.features import Unigram, Bigram, Trigram, Capital, CapitalStart
+from postagger.utils.features import Wordtag, Suffix, Prefix, Unigram, Bigram, Trigram, PreviousWord, \
+    NextWord, Capital, CapitalStart, Numeric
 
 
 class Params:
-    features_functions = [Unigram, Bigram, Trigram, Capital, CapitalStart]
+    features_functions = [Wordtag, Suffix, Prefix, Unigram, Bigram, Trigram, PreviousWord, NextWord,
+                          Capital, CapitalStart, Numeric]

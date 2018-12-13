@@ -9,7 +9,19 @@ from postagger.utils.params import Params
 
 
 # TODO: replace with a module that compute counts using templates from data
-preprocess_dict = {'unigram-f105': poss, 'starting_capital': ['DT']}
+preprocess_dict = {
+    'wordtag-f100': [('the', 'DT')],
+    'suffix-f101': [('ing', 'VBG')],
+    'prefix-f102': [('pre', 'NN')],
+    'trigram-f103': [('DT', 'JJ', 'NN')],  # TODO: broken, param optimized is zero
+    'bigram-f104': [('DT', 'JJ')],
+    'unigram-f105': ['DT'],
+    'previousword-f106': [('the', 'NNP')],  # TODO: broken, param optimized is zero
+    'nextword-f107': [('the', 'VB')],
+    'starting_capital': ['DT'],
+    'capital_inside': ['NN'],
+    'number_inside': ['CD']
+}
 
 
 class MaximumEntropyClassifier:

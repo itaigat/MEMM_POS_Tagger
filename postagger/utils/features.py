@@ -12,9 +12,8 @@ def extract_current_word(**kwargs):
 def extract_prev_word(**kwargs):
     sentence = kwargs['sentence']
     word_id = kwargs['x'][3]
-    sent_id = kwargs['x'][2]
     if word_id > 0:
-        prev_word = sentence[sent_id][word_id - 1]
+        prev_word = sentence[word_id - 1]
         return prev_word
     else:
         return None
@@ -23,9 +22,8 @@ def extract_prev_word(**kwargs):
 def extract_next_word(**kwargs):
     sentence = kwargs['sentence']
     word_id = kwargs['x'][3]
-    sent_id = kwargs['x'][2]
-    if word_id < len(sentence[sent_id] - 1):
-        next_word = sentence[sent_id][word_id + 1]
+    if word_id < len(sentence)-1:
+        next_word = sentence[word_id + 1]
         return next_word
     else:
         return None
@@ -68,29 +66,8 @@ class Wordtag(FeatureFunction):
         return data, i, j
 
 
-class Prefix(FeatureFunction):
-    name = 'prefix-f101'
-
-    def __call__(self, **kwargs):
-        data, i, j = [], [], []
-        word = extract_current_word(**kwargs)
-        prefixes = []
-        if len(word) >= 4:
-            prefixes = [word[:1], word[:2], word[:3], word[:4]]
-        tag = kwargs['y']
-        pt_tuples = [(prefix, tag) for prefix in prefixes]
-        for tup in pt_tuples:
-            if tup in self.tuples:
-                index = self.tuples.index(tup)
-                data.append(1)
-                i.append(0)
-                j.append(index)
-
-        return data, i, j
-
-
 class Suffix(FeatureFunction):
-    name = 'suffix-f102'
+    name = 'suffix-f101'
 
     def __call__(self, **kwargs):
         data, i, j = [], [], []
@@ -110,18 +87,41 @@ class Suffix(FeatureFunction):
         return data, i, j
 
 
-class Unigram(FeatureFunction):
-    name = 'unigram-f105'
+class Prefix(FeatureFunction):
+    # prefix and suffix functions assumes only one of the tuples appear (size <= 4)
+    name = 'prefix-f102'
 
     def __call__(self, **kwargs):
-        # unpack needed vars
         data, i, j = [], [], []
-        y = kwargs['y']
-        if y in self.tuples:
-            index = self.tuples.index(y)
+        word = extract_current_word(**kwargs)
+        prefixes = []
+        if len(word) >= 4:
+            prefixes = [word[:1], word[:2], word[:3], word[:4]]
+        tag = kwargs['y']
+        pt_tuples = [(prefix, tag) for prefix in prefixes]
+        for tup in pt_tuples:
+            if tup in self.tuples:
+                index = self.tuples.index(tup)
+                data.append(1)
+                i.append(0)
+                j.append(index)
+
+        return data, i, j
+
+
+class Trigram(FeatureFunction):
+    name = 'trigram-f103'
+
+    def __call__(self, **kwargs):
+        data, i, j = [], [], []
+        pre_pre_tag = kwargs['x'][0]
+        pre_tag = kwargs['x'][1]
+        tag = kwargs['y']
+        tup = (pre_pre_tag, pre_tag, tag)
+        if tup in self.tuples:
+            index = self.tuples.index(tup)
             data.append(1)
-            # relative indices (will be shifted later)
-            i.append(0)  # this will always be 0 since we compute a row vector
+            i.append(0)
             j.append(index)
 
         return data, i, j
@@ -144,19 +144,18 @@ class Bigram(FeatureFunction):
         return data, i, j
 
 
-class Trigram(FeatureFunction):
-    name = 'trigram-f103'
+class Unigram(FeatureFunction):
+    name = 'unigram-f105'
 
     def __call__(self, **kwargs):
+        # unpack needed vars
         data, i, j = [], [], []
-        pre_pre_tag = kwargs['x'][0]
-        pre_tag = kwargs['x'][1]
-        tag = kwargs['y']
-        tup = (pre_pre_tag, pre_tag, tag)
-        if tup in self.tuples:
-            index = self.tuples.index(tup)
+        y = kwargs['y']
+        if y in self.tuples:
+            index = self.tuples.index(y)
             data.append(1)
-            i.append(0)
+            # relative indices (will be shifted later)
+            i.append(0)  # this will always be 0 since we compute a row vector
             j.append(index)
 
         return data, i, j
@@ -182,7 +181,7 @@ class PreviousWord(FeatureFunction):
 
 
 class NextWord(FeatureFunction):
-    name = 'previousword-f106'
+    name = 'nextword-f107'
 
     def __call__(self, **kwargs):
         data, i, j = [], [], []
@@ -209,12 +208,10 @@ class CapitalStart(FeatureFunction):
         if tag not in self.tuples:
             return data, i, j
         word = extract_current_word(**kwargs)
-        for c in word[1:]:
-            if c.isupper():
-                data.append(1)
-                i.append(0)
-                j.append(0)
-                break
+        if word[0].isupper():
+            data.append(1)
+            i.append(0)
+            j.append(0)
 
         return data, i, j
 
@@ -267,9 +264,11 @@ def build_features(x, y, sentence, features_functions, i_shift=0):
     for ind, f in enumerate(features_functions):
         cur_data, cur_i, cur_j = f(x=x, y=y, sentence=sentence)
         # shift j (only if not first feature)
-        if ind != 0:
-            j_shift = features_functions[ind - 1].m
-            cur_j = [x+j_shift for x in cur_j]
+        # sum previous sizes
+        j_shift = 0
+        for ind_ in range(ind-1, -1, -1):
+            j_shift += features_functions[ind_].m
+        cur_j = [x+j_shift for x in cur_j]
         cur_i = [x+i_shift for x in cur_i]
         # append
         data += cur_data
@@ -344,6 +343,7 @@ def init_callable_features(tags, params, preprocess_dict):
     callables = []
     for f in params.features_functions:
         if f.name in preprocess_dict:
+            print("Loaded feature function:" + f.name)
             tuples = preprocess_dict[f.name]
             callables.append(f(tags, tuples))
 

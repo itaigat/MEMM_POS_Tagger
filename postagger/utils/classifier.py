@@ -1,13 +1,15 @@
-from postagger.utils.params import Params
-from postagger.utils.common import poss
 import numpy as np
 from scipy.optimize import minimize
 from postagger.utils.common import timeit
 from time import time
 import copy
-from postagger.utils.features import build_y_x_matrix, build_feature_matrix_
+from postagger.utils.features import build_y_x_matrix, build_feature_matrix_, init_callable_features
+from postagger.utils.common import poss
+from postagger.utils.params import Params
 
-epsilon = 0  # fixes numeric issues, breaks clf tests
+
+# TODO: replace with a module that compute counts using templates from data
+preprocess_dict = {'unigram-f105': poss, 'starting_capital': ['DT']}
 
 
 class MaximumEntropyClassifier:
@@ -30,7 +32,6 @@ class MaximumEntropyClassifier:
         """
         # prepare for converting x,y (history-tuple and tag)
         # into features matrix
-        arg = 0
         t1 = time()
         X, y, sentences = [], [], []
         for tuples, tags, sentence in iterable_sentences:
@@ -41,13 +42,7 @@ class MaximumEntropyClassifier:
         print("Parsing iterables: %f s" % (time() - t1))
         t2 = time()
 
-        # init callable features
-        callables = []
-
-        for f in Params.features_functions:
-            if f.name == 'unigram':
-                arg = poss
-            callables.append(f(arg))
+        callables = init_callable_features(poss, Params, preprocess_dict)
 
         # build matrices
         self.feature_matrix = build_feature_matrix_(X, y, sentences, callables)
@@ -121,7 +116,7 @@ class MaximumEntropyClassifier:
         self.scores = copy.copy(dot_prod_scores)
         ret = np.sum(dot_prod_scores, axis=1)  # shape (|X|,)
         self.normas = copy.copy(ret)
-        ret = np.log(ret + epsilon)  # numeric issues
+        ret = np.log(ret)  # numeric issues
         ret = np.sum(ret)
         return ret
 

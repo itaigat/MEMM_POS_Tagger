@@ -2,7 +2,9 @@ import os
 import time
 from copy import copy
 from os.path import join, dirname
-
+from postagger.utils.features import build_y_x_matrix
+from postagger.utils.params import Params
+from postagger.utils.features import init_callable_features
 import numpy as np
 
 
@@ -46,25 +48,21 @@ def get_data_path(data_file='train_dev.wtag'):
     return path
 
 
-def get_probabilities(u, v, w, sentence, word_id):
-    # TODO: Write this function when I see the output of the real q
-    poss_probabilities = {}
-    sum_exp = 0
-    x = None
+def get_probabilities(x, tags, sentences, features_funcs, w):
+    """
+    computes q(v|u,t,sent_id,word_id)
+    """
     # ('NN', 'VB', 'I ate food', 2)
     # x = build_feature_matrix_()
+    y_x_matrix = build_y_x_matrix(X=x, poss=tags, sentences=sentences, feature_functions=features_funcs)  # shape (|Y|*|X|, m)
+    dot_prod = y_x_matrix.dot(w)  # shape (|Y|*|X|, 1)
+    dot_prod = dot_prod.reshape(-1, len(x))  # shape (|Y|, |X|)
+    scores = np.exp(dot_prod)
+    norma = np.sum(scores)  # shape (1,)
+    probs_matrix = scores / norma  # shape (|Y|, |X|)
+    probs_matrix = probs_matrix.reshape(-1, 1)  # shape (|Y|*|X|, 1)
 
-    for tag in poss:
-        tpl = (tag, u, sentence, word_id)
-        # x = build_feature_matrix_(tpl)
-        dot_product = np.exp(x.dot(w).sum())
-        poss_probabilities[tag] = dot_product
-        sum_exp += dot_product
-
-    for key, value in poss_probabilities.items():
-        poss_probabilities[key] = value / sum_exp
-
-    return poss_probabilities
+    return probs_matrix
 
 
 def max_probabilities(probability_dic, sk2, u, v, w, sentence, word_id):
@@ -142,3 +140,26 @@ poss = ['CC', 'CD', 'DT', 'EX', 'FW', 'IN', 'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN'
 poss = ['RBR', '``', 'JJS', ',', 'VBG', 'VBZ', 'TO', 'MD', 'JJ', 'RB', 'VBP', '-LRB-', 'DT', 'WP$', 'PDT', 'CD', 'NN',
         'WP', 'VB', '$', 'POS', 'WRB', 'IN', 'VBN', 'NNP', 'RP', 'EX', 'JJR', 'PRP', '-RRB-', "''", 'VBD', '.', 'RBS',
         ':', 'PRP$', 'NNS', 'WDT', 'CC', 'UH']
+
+if __name__ == '__main__':
+    # test get_probab
+    preprocess_dict = {
+        'wordtag-f100': [('the', 'DT')],
+        'suffix-f101': [('ing', 'VBG')],
+        'prefix-f102': [('pre', 'NN')],
+        'trigram-f103': [('DT', 'JJ', 'NN')],  # TODO: broken, param optimized is zero
+        'bigram-f104': [('DT', 'JJ')],
+        'unigram-f105': ['DT'],
+        'previousword-f106': [('the', 'NNP')],  # TODO: broken, param optimized is zero
+        'nextword-f107': [('the', 'VB')],
+        'starting_capital': ['DT'],
+        'capital_inside': ['NN'],
+        'number_inside': ['CD']
+    }
+    x = [('DT', 'NN', 0, 2)]
+    tags = poss
+    sentences = [['The', 'dog', 'walks']]
+    w = np.random.rand(11)
+    callables = init_callable_features(tags, Params, preprocess_dict)
+    v = get_probabilities(x, tags, sentences, callables, w)
+    print(v)

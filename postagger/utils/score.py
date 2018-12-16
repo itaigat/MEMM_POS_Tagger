@@ -53,3 +53,16 @@ def F1(predicted, true):
     recall_score = recall(predicted, true)
 
     return 2 * ((precision_score * recall_score) / (precision_score + recall_score))
+
+
+def accuracy(predicted, true):
+    count_true = 0
+
+    if len(predicted) != len(true) or len(true) == 0 or len(predicted) == 0:
+        return 0.0
+
+    for idx, item in enumerate(predicted):
+        if item == true[idx]:
+            count_true += 1
+
+    return count_true / len(predicted)

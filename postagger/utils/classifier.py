@@ -6,23 +6,10 @@ import copy
 from postagger.utils.features import build_y_x_matrix, build_feature_matrix_, init_callable_features
 from postagger.utils.common import poss
 from postagger.utils.params import Params
+from postagger.utils.common import viterbi
 
 
 # TODO: replace with a module that compute counts using templates from data
-preprocess_dict = {
-    'wordtag-f100': [('the', 'DT')],
-    'suffix-f101': [('ing', 'VBG')],
-    'prefix-f102': [('pre', 'NN')],
-    'trigram-f103': [('DT', 'JJ', 'NN')],
-    'bigram-f104': [('DT', 'JJ')],
-    'unigram-f105': ['DT'],
-    'previousword-f106': [('the', 'NNP')],
-    'nextword-f107': [('the', 'VB')],
-    'starting_capital': ['DT'],
-    'capital_inside': ['NN'],
-    'number_inside': ['CD']
-}
-
 
 class MaximumEntropyClassifier:
     """
@@ -54,14 +41,14 @@ class MaximumEntropyClassifier:
         print("Parsing iterables: %f s" % (time() - t1))
         t2 = time()
 
-        callables = init_callable_features(poss, Params, preprocess_dict)
+        self.callable_functions = init_callable_features(poss, Params, Params.preprocess_dict)
 
         # build matrices
-        self.feature_matrix = build_feature_matrix_(X, y, sentences, callables)
+        self.feature_matrix = build_feature_matrix_(X, y, sentences, self.callable_functions)
         print("Building feature matrix: %f s" % (time() - t2))
         t3 = time()
 
-        self.y_x_matrix = build_y_x_matrix(X, poss, sentences, callables)
+        self.y_x_matrix = build_y_x_matrix(X, poss, sentences, self.callable_functions)
         print("Building y_x features matrix: %f s" % (time() - t3))
 
         self.X = X
@@ -71,6 +58,7 @@ class MaximumEntropyClassifier:
         # share between loss and grad
         self.normas = None
         self.scores = None
+        self.v = None
 
     @timeit
     def fit(self, reg=0, verbose=0):
@@ -85,9 +73,11 @@ class MaximumEntropyClassifier:
 
         if res.success:
             print("Optimization succeeded.")
-
-        print(res.x)
-        print(res.x.shape)
+            print('Weights vector shape: ', res.x.shape)
+            print('Weights vector: ', res.x)
+            self.v = res.x
+        else:
+            print('Optimization failed')
 
     def loss(self, v, feature_matrix, X, y, sentences):
         """
@@ -176,4 +166,16 @@ class MaximumEntropyClassifier:
         pass
 
     def predict(self, X):
-        pass
+        """
+        :param X: [(sentence_index, sentence_list),...,()]
+        :return: [tags_sentence_1...]
+        """
+        tags = []
+
+        if self.v is None:
+            print('You need to fit the model before prediction')
+        else:
+            for tuples, tags, sentence in X:
+                tags.append(viterbi(tuples[0][2], self.v, sentence, self.callable_functions))
+
+        return tags

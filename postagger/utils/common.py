@@ -2,10 +2,11 @@ import os
 import time
 from copy import copy
 from os.path import join, dirname
-from postagger.utils.features import build_y_x_matrix
-from postagger.utils.params import Params
-from postagger.utils.features import init_callable_features
+
 import numpy as np
+
+from postagger.utils.features import build_y_x_matrix, init_callable_features
+from postagger.utils.params import Params
 
 
 def read_file(file_path):
@@ -48,30 +49,40 @@ def get_data_path(data_file='train_dev.wtag'):
     return path
 
 
-def get_probabilities(x, tags, sentences, features_funcs, w):
+def get_probabilities(x, sentences, w, callable_functions):
     """
     computes q(v|u,t,sent_id,word_id)
     """
     # ('NN', 'VB', 'I ate food', 2)
     # x = build_feature_matrix_()
-    y_x_matrix = build_y_x_matrix(X=x, poss=tags, sentences=sentences, feature_functions=features_funcs)  # shape (|Y|*|X|, m)
+    tags = copy(poss)
+    # shape (|Y|*|X|, m)
+    y_x_matrix = build_y_x_matrix(X=x, poss=tags, sentences=sentences, feature_functions=callable_functions)
+
     dot_prod = y_x_matrix.dot(w)  # shape (|Y|*|X|, 1)
     dot_prod = dot_prod.reshape(-1, len(x))  # shape (|Y|, |X|)
+
     scores = np.exp(dot_prod)
     norma = np.sum(scores)  # shape (1,)
+
     probs_matrix = scores / norma  # shape (|Y|, |X|)
     probs_matrix = probs_matrix.reshape(-1, 1)  # shape (|Y|*|X|, 1)
 
     return probs_matrix
 
 
-def max_probabilities(probability_dic, sk2, u, v, w, sentence, word_id):
+def max_probabilities(probability_dic, sk2, u, v, w, sentence_id, sentence_list, word_id, tmp_probabilities_dic,
+                      callable_functions):
     max_probability = 0
     argmax_probability = ''
-    probabilities_vector = get_probabilities(u, v, w, sentence, word_id)
+    v_index = poss.index(v)
 
-    for tag in enumerate(sk2):
-        tmp = probability_dic[(word_id, tag, u)] * probabilities_vector[v]
+    for tag in sk2:
+        if (u, tag) not in tmp_probabilities_dic.keys():
+            tmp_probabilities_dic[(u, tag)] = get_probabilities([(tag, u, sentence_id, word_id)], sentence_list, w,
+                                                                callable_functions)
+        tmp = probability_dic[(word_id - 1, tag, u)] * tmp_probabilities_dic[(u, tag)][v_index][0]
+
         if tmp > max_probability:
             max_probability = tmp
             argmax_probability = tag
@@ -104,12 +115,12 @@ def init_s(idx):
         return s, s, s
 
 
-def viterbi(sentence, w):
-    sentence_lst = sentence.split(' ')
+def viterbi(sentence_id, sentence_lst, w, callable_functions):
     len_sentence = len(sentence_lst)
     tags = ['' for i in range(len_sentence)]
 
-    probability_dic = {(0, '*', '*'): 1}
+    tmp_probabilities_dic = {}
+    probability_dic = {(-1, '*', '*'): 1}
     bp = {}
 
     for idx, word in enumerate(sentence_lst):
@@ -118,16 +129,18 @@ def viterbi(sentence, w):
         for v in s_current:
             for u in sk1:
                 # TODO: Check what bp gets
-                probability_dic[(idx, u, v)], bp[(idx, u, v)] = max_probabilities(probability_dic, sk2,
-                                                                                  u, v, w, sentence, idx)
+                probability_dic[(idx, u, v)], bp[(idx, u, v)] = max_probabilities(probability_dic, sk2, u, v, w,
+                                                                                  sentence_id, sentence_lst, idx,
+                                                                                  tmp_probabilities_dic,
+                                                                                  callable_functions)
 
-    tags[len_sentence - 1], tags[len_sentence] = pie_arg_max(probability_dic, sentence_lst)
+    tags[len_sentence - 2], tags[len_sentence - 1] = pie_arg_max(probability_dic, sentence_lst)
 
-    for k in range(len_sentence - 2, -1, -1):
+    for k in range(len_sentence - 3, -1, -1):
         tag = bp[(k + 2, tags[k + 1], tags[k + 2])]
         tags.append(tag)
 
-    return reversed(tags)
+    return list(reversed(tags))
 
 
 '''
@@ -141,25 +154,26 @@ poss = ['RBR', '``', 'JJS', ',', 'VBG', 'VBZ', 'TO', 'MD', 'JJ', 'RB', 'VBP', '-
         'WP', 'VB', '$', 'POS', 'WRB', 'IN', 'VBN', 'NNP', 'RP', 'EX', 'JJR', 'PRP', '-RRB-', "''", 'VBD', '.', 'RBS',
         ':', 'PRP$', 'NNS', 'WDT', 'CC', 'UH']
 
-if __name__ == '__main__':
-    # test get_probab
-    preprocess_dict = {
-        'wordtag-f100': [('the', 'DT')],
-        'suffix-f101': [('ing', 'VBG')],
-        'prefix-f102': [('pre', 'NN')],
-        'trigram-f103': [('DT', 'JJ', 'NN')],  # TODO: broken, param optimized is zero
-        'bigram-f104': [('DT', 'JJ')],
-        'unigram-f105': ['DT'],
-        'previousword-f106': [('the', 'NNP')],  # TODO: broken, param optimized is zero
-        'nextword-f107': [('the', 'VB')],
-        'starting_capital': ['DT'],
-        'capital_inside': ['NN'],
-        'number_inside': ['CD']
-    }
-    x = [('DT', 'NN', 0, 2)]
-    tags = poss
-    sentences = [['The', 'dog', 'walks']]
-    w = np.random.rand(11)
-    callables = init_callable_features(tags, Params, preprocess_dict)
-    v = get_probabilities(x, tags, sentences, callables, w)
-    print(v)
+# if __name__ == '__main__':
+#     # test get_probab
+#     preprocess_dict = {
+#         'wordtag-f100': [('the', 'DT')],
+#         'suffix-f101': [('ing', 'VBG')],
+#         'prefix-f102': [('pre', 'NN')],
+#         'trigram-f103': [('DT', 'JJ', 'NN')],  # TODO: broken, param optimized is zero
+#         'bigram-f104': [('DT', 'JJ')],
+#         'unigram-f105': ['DT'],
+#         'previousword-f106': [('the', 'NNP')],  # TODO: broken, param optimized is zero
+#         'nextword-f107': [('the', 'VB')],
+#         'starting_capital': ['DT'],
+#         'capital_inside': ['NN'],
+#         'number_inside': ['CD']
+#     }
+#     x = [('DT', 'NN', 0, 2), ('DT', 'DT', 0, 1)]
+#     tags = poss
+#     sentences = [['The', 'dog', 'walks']]
+#     w = np.random.rand(11)
+#     callables = init_callable_features(tags, Params, preprocess_dict)
+#     v = get_probabilities(x, sentences, w, callables)
+#     print(viterbi(2, sentences[0], w, callables))
+#     print(v)

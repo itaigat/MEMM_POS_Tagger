@@ -170,7 +170,7 @@ class PreviousWord(FeatureFunction):
         if not prev_word:
             return data, i, j
         tag = kwargs['y']
-        tup = [(prev_word, tag)]
+        tup = (prev_word, tag)
         if tup in self.tuples:
             index = self.tuples.index(tup)
             data.append(1)
@@ -189,7 +189,7 @@ class NextWord(FeatureFunction):
         if not next_word:
             return data, i, j
         tag = kwargs['y']
-        tup = [(next_word, tag)]
+        tup = (next_word, tag)
         if tup in self.tuples:
             index = self.tuples.index(tup)
             data.append(1)

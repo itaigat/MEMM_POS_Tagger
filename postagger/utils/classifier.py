@@ -13,10 +13,10 @@ preprocess_dict = {
     'wordtag-f100': [('the', 'DT')],
     'suffix-f101': [('ing', 'VBG')],
     'prefix-f102': [('pre', 'NN')],
-    'trigram-f103': [('DT', 'JJ', 'NN')],  # TODO: broken, param optimized is zero
+    'trigram-f103': [('DT', 'JJ', 'NN')],
     'bigram-f104': [('DT', 'JJ')],
     'unigram-f105': ['DT'],
-    'previousword-f106': [('the', 'NNP')],  # TODO: broken, param optimized is zero
+    'previousword-f106': [('the', 'NNP')],
     'nextword-f107': [('the', 'VB')],
     'starting_capital': ['DT'],
     'capital_inside': ['NN'],
@@ -169,12 +169,11 @@ class MaximumEntropyClassifier:
 
     def predict_probability(self, X):
         """
-        :param X: a HistoryTuple array of size (N,m)
-        :return: p(y|x;v)
+        :param x: a tuple (t, u, sentence_id, word_id)
+        :return: q(v|t,u,sentece_id,word_id)
         """
-        self.feature_matrix = build_feature_matrix_(X, None, None, None)
-        self.y_x_matrix = build_y_x_matrix(X, poss, None, None)
-        # y = viterbi(None, None, None)
+
+        pass
 
     def predict(self, X):
         pass

@@ -181,7 +181,7 @@ class MaximumEntropyClassifier:
             print('You need to fit the model before prediction')
         else:
             for tuples, tags, sentence in X:
-                tmp = viterbi(tuples[0][2], sentences, self.v,self.callable_functions)
+                tmp = viterbi(tuples[0][2], sentences, self.v, self.callable_functions)
                 tags_predicted.append(tmp)
                 print(sentence)
                 print(tags)

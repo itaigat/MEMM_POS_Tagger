@@ -88,4 +88,4 @@ class CompData(Dataset):
 
                 yield tuples, tags, stripped_sentence
             else:
-                yield sent_id, words
+                yield [(None, None, sent_id)], [], words

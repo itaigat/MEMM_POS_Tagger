@@ -2,6 +2,7 @@ import os
 import time
 from copy import copy
 from os.path import join, dirname
+import operator
 
 import numpy as np
 
@@ -49,7 +50,7 @@ def get_data_path(data_file='train_dev.wtag'):
     return path
 
 
-def get_probabilities(x, sentences, w, callable_functions):
+def get_probabilities(x, w, sentences, callable_functions):
     """
     computes q(v|u,t,sent_id,word_id)
     """
@@ -57,7 +58,13 @@ def get_probabilities(x, sentences, w, callable_functions):
     # x = build_feature_matrix_()
     tags = copy(poss)
     # shape (|Y|*|X|, m)
-    y_x_matrix = build_y_x_matrix(X=x, poss=tags, sentences=sentences, feature_functions=callable_functions)
+    try:
+        y_x_matrix = build_y_x_matrix(X=x, poss=tags, sentences=sentences, feature_functions=callable_functions)
+    except Exception as e:
+        print(x)
+        print(tags)
+        print(sentences)
+        print(e)
 
     dot_prod = y_x_matrix.dot(w)  # shape (|Y|*|X|, 1)
     dot_prod = dot_prod.reshape(-1, len(x))  # shape (|Y|, |X|)
@@ -79,8 +86,9 @@ def max_probabilities(probability_dic, sk2, u, v, w, sentence_id, sentence_list,
 
     for tag in sk2:
         if (u, tag) not in tmp_probabilities_dic.keys():
-            tmp_probabilities_dic[(u, tag)] = get_probabilities([(tag, u, sentence_id, word_id)], sentence_list, w,
+            tmp_probabilities_dic[(u, tag)] = get_probabilities([(tag, u, sentence_id, word_id)], w, sentence_list,
                                                                 callable_functions)
+
         tmp = probability_dic[(word_id - 1, tag, u)] * tmp_probabilities_dic[(u, tag)][v_index][0]
 
         if tmp > max_probability:
@@ -116,16 +124,16 @@ def init_s(idx):
 
 
 def viterbi(sentence_id, sentence_lst, w, callable_functions):
-    len_sentence = len(sentence_lst)
+    sentence = sentence_lst[sentence_id]
+    len_sentence = len(sentence)
     tags = ['' for i in range(len_sentence)]
 
     tmp_probabilities_dic = {}
     probability_dic = {(-1, '*', '*'): 1}
     bp = {}
 
-    for idx, word in enumerate(sentence_lst):
+    for idx, word in enumerate(sentence):
         s_current, sk1, sk2 = init_s(idx)
-
         for v in s_current:
             for u in sk1:
                 # TODO: Check what bp gets
@@ -133,12 +141,11 @@ def viterbi(sentence_id, sentence_lst, w, callable_functions):
                                                                                   sentence_id, sentence_lst, idx,
                                                                                   tmp_probabilities_dic,
                                                                                   callable_functions)
-
-    tags[len_sentence - 2], tags[len_sentence - 1] = pie_arg_max(probability_dic, sentence_lst)
+    tags[len_sentence - 2], tags[len_sentence - 1] = pie_arg_max(probability_dic, sentence)
 
     for k in range(len_sentence - 3, -1, -1):
         tag = bp[(k + 2, tags[k + 1], tags[k + 2])]
-        tags.append(tag)
+        tags[k] = tag
 
     return list(reversed(tags))
 

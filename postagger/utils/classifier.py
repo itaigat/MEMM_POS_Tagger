@@ -71,13 +71,13 @@ class MaximumEntropyClassifier:
                        args=(self.feature_matrix, self.X, self.y, self.sentences),
                        options={'disp': verbose})
 
-        if res.success:
-            print("Optimization succeeded.")
-            print('Weights vector shape: ', res.x.shape)
-            print('Weights vector: ', res.x)
-            self.v = res.x
-        else:
-            print('Optimization failed')
+        norma = np.linalg.norm(res.x, ord=1)
+
+        self.v = res.x / norma
+
+        print("Optimization succeeded.")
+        print('Weights vector shape: ', res.x.shape)
+        print('Weights vector: ', res.x)
 
     def loss(self, v, feature_matrix, X, y, sentences):
         """
@@ -165,17 +165,26 @@ class MaximumEntropyClassifier:
 
         pass
 
+    @timeit
     def predict(self, X):
         """
         :param X: [(sentence_index, sentence_list),...,()]
         :return: [tags_sentence_1...]
         """
-        tags = []
+        tags_predicted = []
+        sentences = []
+
+        for tuples, tags, sentence in X:
+            sentences.append(sentence)
 
         if self.v is None:
             print('You need to fit the model before prediction')
         else:
             for tuples, tags, sentence in X:
-                tags.append(viterbi(tuples[0][2], self.v, sentence, self.callable_functions))
+                tmp = viterbi(tuples[0][2], sentences, self.v,self.callable_functions)
+                tags_predicted.append(tmp)
+                print(sentence)
+                print(tags)
+                print(tmp)
 
-        return tags
+        return tags_predicted

@@ -16,7 +16,7 @@ class Dataset(object):
         ```
     """
 
-    def __init__(self, filename, max_iter=None):
+    def __init__(self, filename, max_iter=None, comp=False):
         """
         Args:
             filename: path to the file
@@ -25,6 +25,7 @@ class Dataset(object):
         self.filename = filename
         self.max_iter = max_iter
         self.length = None
+        self.comp = comp
 
     def __iter__(self):
         pass
@@ -67,22 +68,24 @@ class CompData(Dataset):
             tuples, tags = [], []
             # helper
             word_tag_tuples = []
+            if not self.comp:
+                for word in words:
+                    word_stripped, tag_stripped = word.split('_')
+                    word_tag_tuples.append((word_stripped, tag_stripped))
+                    stripped_sentence.append(word_stripped)
 
-            for word in words:
-                word_stripped, tag_stripped = word.split('_')
-                word_tag_tuples.append((word_stripped, tag_stripped))
-                stripped_sentence.append(word_stripped)
+                for i, word_tag_tuple in enumerate(word_tag_tuples):
+                    tag = word_tag_tuple[1]
+                    tags.append(tag)
+                    if i == 0:
+                        tuples.append(('*', '*', sent_id, i))
+                    elif i == 1:
+                        tuples.append(('*', word_tag_tuples[i - 1][1], sent_id, i))
+                    else:
+                        u = word_tag_tuples[i - 2][1]  # pre pre tag
+                        v = word_tag_tuples[i - 1][1]  # pre tag
+                        tuples.append((u, v, sent_id, i))
 
-            for i, word_tag_tuple in enumerate(word_tag_tuples):
-                tag = word_tag_tuple[1]
-                tags.append(tag)
-                if i == 0:
-                    tuples.append(('*', '*', sent_id, i))
-                elif i == 1:
-                    tuples.append(('*', word_tag_tuples[i - 1][1], sent_id, i))
-                else:
-                    u = word_tag_tuples[i - 2][1]  # pre pre tag
-                    v = word_tag_tuples[i - 1][1]  # pre tag
-                    tuples.append((u, v, sent_id, i))
-
-            yield tuples, tags, stripped_sentence
+                yield tuples, tags, stripped_sentence
+            else:
+                yield sent_id, words

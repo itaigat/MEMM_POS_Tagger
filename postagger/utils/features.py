@@ -68,7 +68,7 @@ class Wordtag(FeatureFunction):
 
 class Suffix(FeatureFunction):
     name = 'suffix-f101'
-
+    #  TODO: fix vector size to be 4
     def __call__(self, **kwargs):
         data, i, j = [], [], []
         word = extract_current_word(**kwargs)
@@ -90,7 +90,7 @@ class Suffix(FeatureFunction):
 class Prefix(FeatureFunction):
     # prefix and suffix functions assumes only one of the tuples appear (size <= 4)
     name = 'prefix-f102'
-
+    #  TODO: fix vector size to be 4
     def __call__(self, **kwargs):
         data, i, j = [], [], []
         word = extract_current_word(**kwargs)
@@ -222,9 +222,9 @@ class Capital(FeatureFunction):
     def __call__(self, **kwargs):
         data, i, j = [], [], []
         tag = kwargs['y']
-        if tag not in self.tuples:
-            return data, i, j
         word = extract_current_word(**kwargs)
+        if tag not in self.tuples or len(word) <= 1:
+            return data, i, j
         for c in word[1:]:
             if c.isupper():
                 data.append(1)

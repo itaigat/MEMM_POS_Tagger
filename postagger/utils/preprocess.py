@@ -1,6 +1,6 @@
-from postagger.utils.common import timeit, get_data_path
 from postagger.utils.decoder import CompData
 import collections
+from postagger.utils.common import pickle_load, pickle_save
 
 preprocess_dict = {
     # needed here only for the keys
@@ -17,9 +17,12 @@ preprocess_dict = {
     'number_inside': ['CD']
 }
 
+MIN_OCCURRENCE = 50
+
+
 class Preprocessor:
 
-    def __init__(self, iterable_sentences, min_occurence=None):
+    def __init__(self, iterable_sentences):
         self.X, self.y, self.sentences = [], [], []
         for tuples, tags, sentence in iterable_sentences:
             for i in range(len(tuples)):
@@ -28,8 +31,7 @@ class Preprocessor:
             self.sentences.append(sentence)
         # init dict
         self.pdict = {i: [] for i in preprocess_dict.keys()}
-        self.min_occurence = {i: 6 for i in preprocess_dict.keys()}  # TODO: get from params
-        self.pdict_cut = {i: [] for i in preprocess_dict.keys()}
+        self.min_occurrence = {i: MIN_OCCURRENCE for i in preprocess_dict.keys()}
 
     def count(self):
         """
@@ -39,26 +41,37 @@ class Preprocessor:
         for i in range(N):
             self.extract_features(self.X[i], self.y[i], self.sentences[self.X[i][2]])
             # extract features
-        self.summarize()
-        return self.pdict_cut
 
-    def summarize(self):
-        """process the dict results, apply minimum occurence option"""
+    def cut(self, min_occurence=None):
+        """process the dict results, apply minimum occurrence option"""
         # first each of the list possibly contain duplicate tuples
         # we will count them and cast them into sets
+        pdict_cut = {i: [] for i in preprocess_dict.keys()}
         print("Summarizing counts")
+        if min_occurence is None:
+            min_occurence = self.min_occurrence
         for feature, tuple_list in self.pdict.items():
             print(feature)
-            counts_dict = collections.counter(tuple_list)
+            counts_dict = collections.Counter(tuple_list)
             # extract relevant counts
             for key, value in counts_dict.items():
-                if value > self.min_occurence[feature]:
-                    self.pdict_cut[feature].append(key)
+                if value > min_occurence[feature]:
+                    pdict_cut[feature].append(key)
 
+        return pdict_cut
 
     def extract_features(self, x, y, sentence):
         self.f100(x, y, sentence)
+        self.f101(x, y, sentence)
         self.f102(x, y, sentence)
+        self.f103(x, y, sentence)
+        self.f104(x, y, sentence)
+        self.f105(x, y, sentence)
+        self.f106(x, y, sentence)
+        self.f107(x, y, sentence)
+        self.f_capital_inside(x, y, sentence)
+        self.f_starting_capital(x, y, sentence)
+        self.f_number_inside(x, y, sentence)
 
     def f100(self, x, y, sentence):
         word_id = x[3]
@@ -73,7 +86,7 @@ class Preprocessor:
         word = sentence[word_id]
         tag = y
         if len(word) >= 4:
-            suffixes = [(word[-i:],tag) for i in range(1,5)]
+            suffixes = [(word[-i:], tag) for i in range(1, 5)]
             self.pdict['suffix-f101'] = self.pdict['suffix-f101'] + suffixes
 
     def f102(self, x, y, sentence):
@@ -82,8 +95,8 @@ class Preprocessor:
         word = sentence[word_id]
         tag = y
         if len(word) >= 4:
-            suffixes = [(word[:i],tag) for i in range(1,5)]
-            self.pdict['prefix-f102'] = self.pdict['prefix-f102'] + suffixes
+            prefixes = [(word[:i], tag) for i in range(1, 5)]
+            self.pdict['prefix-f102'] = self.pdict['prefix-f102'] + prefixes
 
     def f103(self, x, y, sentence):
         # trigram
@@ -148,22 +161,69 @@ class Preprocessor:
     def f_number_inside(self, x, y, sentence):
         word_id = x[3]
         word = sentence[word_id]
-        for w in word[1:]:
-            if w.digit():
+        for w in word:
+            if w.isdigit():
                 tag = y
-                self.pdict['capital_inside'].append(tag)
+                self.pdict['number_inside'].append(tag)
                 break
-
-    # TODO: minimum occurrence option
 
 
 if __name__ == '__main__':
     # test
+    """
     import os
     path = get_data_path(os.path.realpath('../../resources/train.wtag'))
     iterable_sentences = CompData(path)
     p = Preprocessor(iterable_sentences)
+    import time; t = time.time()
     p.count()
-    for key, value in p.pdict.items():
-        print(key)
-        print(value)
+    print("Counting took: %f s" % (time.time() - t))
+    for k, v in p.pdict.items():
+        print(k)
+        print(v)
+    pdict_cut = p.cut()
+    for k, v in pdict_cut.items():
+        print(k)
+        print(v)
+
+    with open('filename.pickle', 'wb') as handle:
+        pickle.dump(p, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    """
+
+"""
+def load_preprocessed_data(filename, iterable_sentences):
+    pickled = None
+    try:
+        with open(filename, 'rb') as handle:
+            pickled = pickle.load(handle)
+    except Exception as e:
+        pass
+
+    if pickled is not None:
+        return pickled.cut()
+    else:
+        p = Preprocessor(iterable_sentences)
+        p.count()
+        pdict_cut = p.cut()
+        # save model
+        with open(filename, 'wb') as handle:
+            pickle.dump(p, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        return pdict_cut
+"""
+
+def load_save_preprocessed_data(filename, iterable_sentences):
+    """return a preprocessor which applied count()"""
+
+    # try loading
+    p = pickle_load(filename)
+    if p is not None:
+        return p
+
+    # save and return loaded
+    p = Preprocessor(iterable_sentences)
+    p.count()
+    ret = pickle_save(p, filename)
+    if ret is None:
+        return ret
+    print("Preprocessor object saved successfuly")
+    return p

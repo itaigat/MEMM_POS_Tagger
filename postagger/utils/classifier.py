@@ -7,9 +7,9 @@ from postagger.utils.features import build_y_x_matrix, build_feature_matrix_, in
 from postagger.utils.common import poss
 from postagger.utils.params import Params
 from postagger.utils.common import viterbi
+from postagger.utils.common import pickle_save, pickle_load
 
-
-# TODO: replace with a module that compute counts using templates from data
+epsilon = 1e-32  # for numeric issues
 
 class MaximumEntropyClassifier:
     """
@@ -17,7 +17,7 @@ class MaximumEntropyClassifier:
     """
 
     @timeit
-    def __init__(self, iterable_sentences):
+    def __init__(self, iterable_sentences, preprocess_dict):
         """
         iterable sentences:
             a tuple (tuples, tags, stripped_sentence)
@@ -41,7 +41,7 @@ class MaximumEntropyClassifier:
         print("Parsing iterables: %f s" % (time() - t1))
         t2 = time()
 
-        self.callable_functions = init_callable_features(poss, Params, Params.preprocess_dict)
+        self.callable_functions = init_callable_features(poss, Params, preprocess_dict)
 
         # build matrices
         self.feature_matrix = build_feature_matrix_(X, y, sentences, self.callable_functions)
@@ -71,8 +71,8 @@ class MaximumEntropyClassifier:
                        args=(self.feature_matrix, self.X, self.y, self.sentences),
                        options={'disp': verbose})
 
+        # save normalized parameters vector (normalization is needed as numeric fix for viterbi computations)
         norma = np.linalg.norm(res.x, ord=1)
-
         self.v = res.x / norma
 
         print("Optimization succeeded.")
@@ -118,7 +118,7 @@ class MaximumEntropyClassifier:
         self.scores = copy.copy(dot_prod_scores)
         ret = np.sum(dot_prod_scores, axis=1)  # shape (|X|,)
         self.normas = copy.copy(ret)
-        ret = np.log(ret)  # numeric issues
+        ret = np.log(ret + epsilon)  # numeric issues
         ret = np.sum(ret)
         return ret
 
@@ -151,7 +151,7 @@ class MaximumEntropyClassifier:
     def compute_grad_second_term(self, v, X, sentences):
         """helper"""
         y_x_matrix = self.y_x_matrix  # shape (|Y|*|X|, m)
-        probs_matrix = self.scores / self.normas.reshape(-1, 1)  # shape (|Y|, |X|)
+        probs_matrix = self.scores / (self.normas.reshape(-1, 1) + epsilon)  # shape (|Y|, |X|) # fix numeric issue
         probs_matrix = probs_matrix.reshape(-1, 1)  # shape (|Y|*|X|, 1)
         product = y_x_matrix.multiply(probs_matrix)  # shape (|Y|*X|, m)
         grad_features = product.sum(axis=0)  # shape (m,)
@@ -183,8 +183,29 @@ class MaximumEntropyClassifier:
             for tuples, tags, sentence in X:
                 tmp = viterbi(tuples[0][2], sentences, self.v, self.callable_functions)
                 tags_predicted.append(tmp)
-                print(sentence)
-                print(tags)
-                print(tmp)
+                print("Sentence: " + str(sentence))
+                print("Tags: " + str(tags))
+                print("Pred: " + str(tmp))
 
         return tags_predicted
+
+
+def save_load_init_model(initialized_clf, filename):
+    """saves or loads clf model
+    initialized_clf: classifier object after running constructor
+    filename: if empty then function assumes user wants to load"""
+    # try loading
+    clf = None
+    if initialized_clf is None:
+        clf = pickle_load(filename)
+    if clf is not None:
+        print("Loaded classifier object")
+        return clf
+
+    # save and return loaded
+    ret = None
+    ret = pickle_save(initialized_clf, filename)
+    if ret:
+        print("Classifier object saved successfuly")
+    else:
+        print("Classifier object save failed")

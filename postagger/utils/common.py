@@ -2,12 +2,10 @@ import os
 import time
 from copy import copy
 from os.path import join, dirname
-import operator
-
+import pickle
 import numpy as np
 
-from postagger.utils.features import build_y_x_matrix, init_callable_features
-from postagger.utils.params import Params
+from postagger.utils.features import build_y_x_matrix
 
 
 def read_file(file_path):
@@ -148,6 +146,27 @@ def viterbi(sentence_id, sentence_lst, w, callable_functions):
         tags[k] = tag
 
     return list(reversed(tags))
+
+
+def pickle_load(filename):
+    try:
+        with open(filename, 'rb') as handle:
+            pickled = pickle.load(handle)
+            return pickled
+    except Exception as e:
+        print("Pickle load failed with filename: " + str(filename))
+        print("Exception raised: " + str(e))
+        return None
+
+def pickle_save(obj, filename):
+    try:
+        with open(filename, 'wb') as handle:
+            pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            return True
+    except Exception as e:
+        print("Pickle save failed with filename, object: " + str(filename) + ',' + str(obj))
+        print("Exception raised: " + str(e))
+        return None
 
 
 '''

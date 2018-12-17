@@ -24,4 +24,8 @@ class Params:
         'capital_inside': ['NN'],
         'number_inside': ['CD']
     }
+    pos_dic = {}
+
+    for idx, pos in enumerate(poss):
+        pos_dic[pos] = idx
 

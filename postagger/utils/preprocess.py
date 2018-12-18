@@ -54,7 +54,7 @@ class Preprocessor:
         if method == 'cut':
             return self.cut(dict)
         elif method == 'top':
-            return self.top(dict)
+            return self.top_occ(dict)
 
     def cut(self, min_occurence=None):
         """process the dict results, apply minimum occurrence option"""
@@ -73,7 +73,7 @@ class Preprocessor:
 
         return pdict_cut
 
-    def top(self, top=None):
+    def top_occ(self, top=None):
         """Top features by occurrence"""
         pdict_top = {i: [] for i in preprocess_dict.keys()}
         print("Preprocessor: summarizing counts")

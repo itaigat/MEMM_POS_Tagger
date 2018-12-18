@@ -41,7 +41,7 @@ def timeit(method):
 
 def get_data_path(data_file='train_dev.wtag'):
     if os.name == 'nt':
-        path = join(dirname(os.getcwd()), 'resources', data_file)
+        path = join('resources', data_file)
     else:
         path = join(os.getcwd(), 'resources', data_file)
 

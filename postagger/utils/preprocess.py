@@ -1,4 +1,3 @@
-from postagger.utils.decoder import CompData
 import collections
 from postagger.utils.common import pickle_load, pickle_save
 
@@ -17,7 +16,9 @@ preprocess_dict = {
     'number_inside': ['CD']
 }
 
+# default values
 MIN_OCCURRENCE = 50
+TOP = 100
 
 
 class Preprocessor:
@@ -32,6 +33,7 @@ class Preprocessor:
         # init dict
         self.pdict = {i: [] for i in preprocess_dict.keys()}
         self.min_occurrence = {i: MIN_OCCURRENCE for i in preprocess_dict.keys()}
+        self.top = {i: TOP for i in preprocess_dict.keys()}
 
     def count(self):
         """
@@ -42,6 +44,18 @@ class Preprocessor:
             self.extract_features(self.X[i], self.y[i], self.sentences[self.X[i][2]])
             # extract features
 
+    def summarize_counts(self, method, dict):
+        """
+        summarize the counts, using one of the methods
+        :param method: 'cut' or 'top'
+        :param dict: parameters dict
+        :return: preprocess_dict, input for classifier
+        """
+        if method == 'cut':
+            return self.cut(dict)
+        elif method == 'top':
+            return self.top(dict)
+
     def cut(self, min_occurence=None):
         """process the dict results, apply minimum occurrence option"""
         # first each of the list possibly contain duplicate tuples
@@ -51,7 +65,6 @@ class Preprocessor:
         if min_occurence is None:
             min_occurence = self.min_occurrence
         for feature, tuple_list in self.pdict.items():
-            print(feature)
             counts_dict = collections.Counter(tuple_list)
             # extract relevant counts
             for key, value in counts_dict.items():
@@ -59,6 +72,20 @@ class Preprocessor:
                     pdict_cut[feature].append(key)
 
         return pdict_cut
+
+    def top(self, top=None):
+        """Top features by occurrence"""
+        pdict_top = {i: [] for i in preprocess_dict.keys()}
+        print("Preprocessor: summarizing counts")
+        if top is None:
+            top = self.top
+        for feature, tuple_list in self.pdict.items():
+            counts_dict = collections.Counter(tuple_list)
+            # extract relevant counts
+            for elem, count in counts_dict.most_common(top[feature]):
+                pdict_top[feature].append(elem)
+
+        return pdict_top
 
     def extract_features(self, x, y, sentence):
         self.f100(x, y, sentence)
@@ -168,6 +195,24 @@ class Preprocessor:
                 break
 
 
+def load_save_preprocessed_data(filename, iterable_sentences):
+    """return a preprocessor which applied count()"""
+
+    # try loading
+    p = pickle_load(filename)
+    if p is not None:
+        return p
+
+    # save and return loaded
+    p = Preprocessor(iterable_sentences)
+    p.count()
+    ret = pickle_save(p, filename)
+    if ret is None:
+        return ret
+    print("Preprocessor object saved successfuly")
+    return p
+
+
 if __name__ == '__main__':
     # test
     """
@@ -189,41 +234,3 @@ if __name__ == '__main__':
     with open('filename.pickle', 'wb') as handle:
         pickle.dump(p, handle, protocol=pickle.HIGHEST_PROTOCOL)
     """
-
-"""
-def load_preprocessed_data(filename, iterable_sentences):
-    pickled = None
-    try:
-        with open(filename, 'rb') as handle:
-            pickled = pickle.load(handle)
-    except Exception as e:
-        pass
-
-    if pickled is not None:
-        return pickled.cut()
-    else:
-        p = Preprocessor(iterable_sentences)
-        p.count()
-        pdict_cut = p.cut()
-        # save model
-        with open(filename, 'wb') as handle:
-            pickle.dump(p, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        return pdict_cut
-"""
-
-def load_save_preprocessed_data(filename, iterable_sentences):
-    """return a preprocessor which applied count()"""
-
-    # try loading
-    p = pickle_load(filename)
-    if p is not None:
-        return p
-
-    # save and return loaded
-    p = Preprocessor(iterable_sentences)
-    p.count()
-    ret = pickle_save(p, filename)
-    if ret is None:
-        return ret
-    print("Preprocessor object saved successfuly")
-    return p

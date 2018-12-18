@@ -3,6 +3,7 @@ from scipy.optimize import minimize
 from postagger.utils.common import timeit
 from time import time
 import copy
+import operator
 from postagger.utils.features import build_y_x_matrix, build_feature_matrix_, init_callable_features
 from postagger.utils.common import poss
 from postagger.utils.params import Params
@@ -10,6 +11,7 @@ from postagger.utils.common import viterbi
 from postagger.utils.common import pickle_save, pickle_load
 
 epsilon = 1e-32  # for numeric issues
+
 
 class MaximumEntropyClassifier:
     """
@@ -189,6 +191,24 @@ class MaximumEntropyClassifier:
 
         return tags_predicted
 
+    def get_num_features(self):
+        return self.feature_matrix.shape[1]
+
+    def get_enabled_features_per_tag(self):
+        y_x_sum_rows = self.y_x_matrix.sum(axis=1)
+        enabled = y_x_sum_rows.reshape(len(self.X), len(poss)).sum(axis=0)
+        counts = enabled.tolist()[0]
+        tuples_list = []
+        for i,count in enumerate(counts):
+            tup = (poss[i], count)
+            tuples_list.append(tup)
+
+        counts_dict = dict(tuples_list)
+
+        sorted_dict = sorted(counts_dict.items(), key=operator.itemgetter(1), reverse=True)
+        return sorted_dict
+
+
 
 def save_load_init_model(initialized_clf, filename):
     """saves or loads clf model
@@ -202,7 +222,7 @@ def save_load_init_model(initialized_clf, filename):
         print("Loaded classifier object")
         return clf
 
-    # save and return loaded
+    # save
     ret = None
     ret = pickle_save(initialized_clf, filename)
     if ret:

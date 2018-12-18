@@ -8,65 +8,67 @@ from postagger.utils.classifier import save_load_init_model
 
 
 #  TODO:
-#   perform sanity check for viterbi to be sure it is not biased
+#   improve viterbi efficiency
 
 #  TODO:
-#   add TOP X counting method,
-#   build as external method: use preprocess_dict.pdict attribute as input which is a dict of lists
-#   each value is a list that contains the corresponding counts computed from data, see example below:
-#   preprocess_dict.pdict = { 'wordtag-f100': [('the', 'DT'), ('dog', 'NN'), ('the', 'dt')...], 'suffix-f101':[ ...].. }
-#   NOTICE: don't change Preprocess class, otherwise train.pickle file won't load and you'll have to build it again
-
-#  TODO:
-#   other option, since the feature we choose from counts are somehow biased to 'DT', 'NN', 'IN', suggest a counting
-#   method that prefers variety of tags.
-#   both this and previous method should solve the biased results of the clf.
-
-#  TODO:
-#   accuracy,
 #   confusion matrix top10 mistakes,
 #   add arguments from main sys.argv (to run on server),
 #   add final model saver (after optimization)
 
 
 min_occurrence_dict = {
-    'wordtag-f100': 50,
-    'suffix-f101': 250,
-    'prefix-f102': 250,
-    'trigram-f103': 50,
-    'bigram-f104': 50,
-    'unigram-f105': 50,
-    'previousword-f106': 100,
-    'nextword-f107': 100,
+    'wordtag-f100': 5,
+    'suffix-f101': 5,
+    'prefix-f102': 5,
+    'trigram-f103': 5,
+    'bigram-f104': 5,
+    'unigram-f105': 5,
+    'previousword-f106': 5,
+    'nextword-f107': 5,
     'starting_capital': 5,
     'capital_inside': 5,
     'number_inside': 5
 }
 
+top_occurrence = {
+    'wordtag-f100': 50,
+    'suffix-f101': 50,
+    'prefix-f102': 5,  # junk
+    'trigram-f103': 780,
+    'bigram-f104': 100,
+    'unigram-f105': 50,
+    'previousword-f106': 320,
+    'nextword-f107': 307,
+    'starting_capital': 10,
+    'capital_inside': 3,
+    'number_inside': 3
+}
 
 @timeit
 def main(argv):
     # args
-    # clf saved is not optimized, only matrices
-    load_matrices_from_disk = False  # False means clf object will be saved
-    init_clf_filename = 'init_clf.pickle'
+    # only matrices are saved, not the optimized clf
+    load_matrices_from_disk = True  # False means clf object will be saved, enable to debug clf.fit / predict
+    init_clf_filename = 'init_clf_top_occurrence.pickle'  # change when training a new model
 
-    # training procedure
-    train_path = get_data_path('train.wtag')
-    train_sentences = CompData(train_path)
-    # count features occurrences
-    preprocess_dict = load_save_preprocessed_data('train.pickle', train_sentences)
-    pdict_cut = preprocess_dict.cut(min_occurrence_dict)
-    # build matrices
     if load_matrices_from_disk:
-        # load
         clf = save_load_init_model(initialized_clf=None, filename=init_clf_filename)
     else:
-        # save
-        clf = MaximumEntropyClassifier(train_sentences, pdict_cut)
+        # build matrices and save to disk
+        train_path = get_data_path('train.wtag')
+        train_sentences = CompData(train_path)
+
+        # count features occurrences
+        preprocessor = load_save_preprocessed_data('train_preprocessed.pickle', train_sentences)
+        pdict = preprocessor.summarize_counts(method='top', dict=top_occurrence)
+
+        clf = MaximumEntropyClassifier(train_sentences, pdict)
         save_load_init_model(initialized_clf=clf, filename=init_clf_filename)
 
     # fit
+    print("Training %d features" % clf.get_num_features())
+    print("Top enabled features per tag: " + str(clf.get_enabled_features_per_tag()))
+
     clf.fit(reg=10, verbose=1)
 
     # evaluate

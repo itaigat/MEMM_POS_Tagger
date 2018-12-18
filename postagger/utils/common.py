@@ -158,6 +158,7 @@ def pickle_load(filename):
         print("Exception raised: " + str(e))
         return None
 
+
 def pickle_save(obj, filename):
     try:
         with open(filename, 'wb') as handle:

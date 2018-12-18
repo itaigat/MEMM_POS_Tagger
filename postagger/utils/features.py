@@ -341,10 +341,14 @@ def init_callable_features(tags, params, preprocess_dict):
     """
     # init callable features
     callables = []
+    total_features = 0
     for f in params.features_functions:
         if f.name in preprocess_dict:
-            print("Loaded feature function:" + f.name)
             tuples = preprocess_dict[f.name]
-            callables.append(f(tags, tuples))
+            callable = f(tags, tuples)
+            callables.append(callable)
+            total_features += callable.m
+            print("Loaded feature function:" + f.name + ',' + "m=%d" % callable.m )
 
+    print("Total features chosen: %d" % total_features)
     return callables

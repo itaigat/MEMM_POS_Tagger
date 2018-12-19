@@ -1,10 +1,10 @@
 from postagger.utils.features import Wordtag, Suffix, Prefix, Unigram, Bigram, Trigram, PreviousWord, \
-    NextWord, Capital, CapitalStart, Numeric
+    NextWord, Capital, CapitalStart, Numeric, Hyphen, PrePreWord, NextNextWord
 
 
 class Params:
     features_functions = [Wordtag, Suffix, Prefix, Unigram, Bigram, Trigram, PreviousWord, NextWord,
-                          Capital, CapitalStart, Numeric]
+                          Capital, CapitalStart, Numeric, Hyphen, PrePreWord, NextNextWord]
     poss = ['RBR', '``', 'JJS', ',', 'VBG', 'VBZ', 'TO', 'MD', 'JJ', 'RB', 'VBP', '-LRB-', 'DT', 'WP$', 'PDT', 'CD',
             'NN',
             'WP', 'VB', '$', 'POS', 'WRB', 'IN', 'VBN', 'NNP', 'RP', 'EX', 'JJR', 'PRP', '-RRB-', "''", 'VBD', '.',
@@ -22,7 +22,10 @@ class Params:
         'nextword-f107': [('the', 'VB')],
         'starting_capital': ['DT'],
         'capital_inside': ['NN'],
-        'number_inside': ['CD']
+        'number_inside': ['CD'],
+        'hyphen_inside': ['NN'],
+        'pre_pre_word': ['IN'],
+        'next_next_word': ['DT']
     }
     pos_dic = {}
 

@@ -19,11 +19,30 @@ def extract_prev_word(**kwargs):
         return None
 
 
+def extract_pp_word(**kwargs):
+    sentence = kwargs['sentence']
+    word_id = kwargs['x'][3]
+    if word_id > 1:
+        prev_word = sentence[word_id - 2]
+        return prev_word
+    else:
+        return None
+
+
 def extract_next_word(**kwargs):
     sentence = kwargs['sentence']
     word_id = kwargs['x'][3]
     if word_id < len(sentence)-1:
         next_word = sentence[word_id + 1]
+        return next_word
+    else:
+        return None
+
+def extract_nn_word(**kwargs):
+    sentence = kwargs['sentence']
+    word_id = kwargs['x'][3]
+    if word_id < len(sentence)-2:
+        next_word = sentence[word_id + 2]
         return next_word
     else:
         return None
@@ -74,7 +93,7 @@ class Suffix(FeatureFunction):
         word = extract_current_word(**kwargs)
         suffixes = []
         if len(word) >= 4:
-            suffixes = [word[-1:], word[-2:], word[-3:], word[-4:]]
+            suffixes = [word[-2:], word[-3:]]
         tag = kwargs['y']
         st_tuples = [(suffix, tag) for suffix in suffixes]
         for tup in st_tuples:
@@ -96,7 +115,7 @@ class Prefix(FeatureFunction):
         word = extract_current_word(**kwargs)
         prefixes = []
         if len(word) >= 4:
-            prefixes = [word[:1], word[:2], word[:3], word[:4]]
+            prefixes = [word[:2], word[:3]]
         tag = kwargs['y']
         pt_tuples = [(prefix, tag) for prefix in prefixes]
         for tup in pt_tuples:
@@ -250,6 +269,61 @@ class Numeric(FeatureFunction):
                 i.append(0)
                 j.append(0)
                 break
+
+        return data, i, j
+
+
+class Hyphen(FeatureFunction):
+    name = 'hyphen_inside'
+
+    def __call__(self, **kwargs):
+        data, i, j = [], [], []
+        tag = kwargs['y']
+        if tag not in self.tuples:
+            return data, i, j
+        word = extract_current_word(**kwargs)
+        if '-' in word:
+            data.append(1)
+            i.append(0)
+            j.append(0)
+
+        return data, i, j
+
+
+class PrePreWord(FeatureFunction):
+    name = 'pre_pre_word'
+
+    def __call__(self, **kwargs):
+        data, i, j = [], [], []
+        prev_word = extract_pp_word(**kwargs)
+        if not prev_word:
+            return data, i, j
+        tag = kwargs['y']
+        tup = (prev_word, tag)
+        if tup in self.tuples:
+            index = self.tuples[tup]
+            data.append(1)
+            i.append(0)
+            j.append(index)
+
+        return data, i, j
+
+
+class NextNextWord(FeatureFunction):
+    name = 'next_next_word'
+
+    def __call__(self, **kwargs):
+        data, i, j = [], [], []
+        next_word = extract_nn_word(**kwargs)
+        if not next_word:
+            return data, i, j
+        tag = kwargs['y']
+        tup = (next_word, tag)
+        if tup in self.tuples:
+            index = self.tuples[tup]
+            data.append(1)
+            i.append(0)
+            j.append(index)
 
         return data, i, j
 

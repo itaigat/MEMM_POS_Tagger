@@ -13,7 +13,10 @@ preprocess_dict = {
     'nextword-f107': [('the', 'VB')],
     'starting_capital': ['DT'],
     'capital_inside': ['NN'],
-    'number_inside': ['CD']
+    'number_inside': ['CD'],
+    'hyphen_inside': 0,
+    'pre_pre_word': 0,
+    'next_next_word': 0
 }
 
 # default values
@@ -130,6 +133,10 @@ class Preprocessor:
         self.f105(x, y, sentence)
         self.f106(x, y, sentence)
         self.f107(x, y, sentence)
+        # extra
+        self.f_hyphen_inside(x, y, sentence)
+        self.f_pre_pre_word(x, y, sentence)
+        self.f_next_next_word(x, y, sentence)
 
     def f100(self, x, y, sentence):
         word_id = x[3]
@@ -144,7 +151,7 @@ class Preprocessor:
         word = sentence[word_id]
         tag = y
         if len(word) >= 4:
-            suffixes = [(word[-i:], tag) for i in range(1, 5)]
+            suffixes = [word[-2:], word[-3:]]
             self.pdict['suffix-f101'] = self.pdict['suffix-f101'] + suffixes
 
     def f102(self, x, y, sentence):
@@ -153,7 +160,7 @@ class Preprocessor:
         word = sentence[word_id]
         tag = y
         if len(word) >= 4:
-            prefixes = [(word[:i], tag) for i in range(1, 5)]
+            prefixes = [word[:2], word[:3]]
             self.pdict['prefix-f102'] = self.pdict['prefix-f102'] + prefixes
 
     def f103(self, x, y, sentence):
@@ -224,6 +231,32 @@ class Preprocessor:
                 tag = y
                 self.pdict['number_inside'].append(tag)
                 break
+
+    def f_hyphen_inside(self, x, y, sentence):
+        word_id = x[3]
+        word = sentence[word_id]
+        if '-' in word:
+            tag = y
+            self.pdict['hyphen_inside'].append(tag)
+
+    def f_pre_pre_word(self, x, y, sentence):
+        word_id = x[3]
+        if word_id >= 2:
+            pp_word_id = word_id-2
+            pp_word = sentence[pp_word_id]
+            tag = y
+            tup = (pp_word, tag)
+            self.pdict['pre_pre_word'].append(tup)
+
+    def f_next_next_word(self, x, y, sentence):
+        word_id = x[3]
+        if word_id < len(sentence)-2:
+            nn_word_id = word_id + 2
+            nn_word = sentence[nn_word_id]
+            tag = y
+            tup = (nn_word, y)
+            self.pdict['next_next_word'].append(tup)
+
 
 @timeit
 def load_save_preprocessed_data(filename, iterable_sentences, top_words, load):

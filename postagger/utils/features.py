@@ -345,7 +345,7 @@ def init_callable_features(tags, params, preprocess_dict):
     for f in params.features_functions:
         if f.name in preprocess_dict:
             tuples = preprocess_dict[f.name]
-            tuples_dict = {x:0 for x in tuples}
+            tuples_dict = {x: i for i, x in enumerate(tuples)}
             callable = f(tags, tuples_dict)
             callables.append(callable)
             total_features += callable.m

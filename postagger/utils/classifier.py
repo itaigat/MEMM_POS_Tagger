@@ -7,8 +7,9 @@ import operator
 from postagger.utils.features import build_y_x_matrix, build_feature_matrix_, init_callable_features
 from postagger.utils.common import poss
 from postagger.utils.params import Params
-from postagger.utils.common import viterbi
+from postagger.utils.common import viterbi_s
 from postagger.utils.common import pickle_save, pickle_load
+from postagger.utils.score import accuracy, confusion_matrix
 
 epsilon = 1e-32  # for numeric issues
 
@@ -18,7 +19,6 @@ class MaximumEntropyClassifier:
     implements MEMM, training and inference methods
     """
 
-    @timeit
     def __init__(self, iterable_sentences, preprocess_dict):
         """
         iterable sentences:
@@ -62,7 +62,6 @@ class MaximumEntropyClassifier:
         self.scores = None
         self.v = None
 
-    @timeit
     def fit(self, reg=0, verbose=0):
         self.reg = reg
         m = self.feature_matrix.shape[1]
@@ -170,7 +169,9 @@ class MaximumEntropyClassifier:
 
         pass
 
-    @timeit
+    def calc_q(self, X):
+        pass
+
     def predict(self, X):
         """
         :param X: [(sentence_index, sentence_list),...,()]
@@ -178,19 +179,28 @@ class MaximumEntropyClassifier:
         """
         tags_predicted = []
         sentences = []
+        true_tags = []
 
         for tuples, tags, sentence in X:
             sentences.append(sentence)
 
+        # Params.q = calc_q(X)
+
         if self.v is None:
             print('You need to fit the model before prediction')
+            return None
         else:
             for tuples, tags, sentence in X:
-                tmp = viterbi(tuples[0][2], sentences, self.v, self.callable_functions)
+                tmp = viterbi_s(tuples[0][2], sentences, self.v, self.callable_functions)
                 tags_predicted.append(tmp)
+                true_tags.append(tags)
                 print("Sentence: " + str(sentence))
                 print("Tags: " + str(tags))
                 print("Pred: " + str(tmp))
+
+        print('Accuracy: ', accuracy(tags_predicted, true_tags))
+        print('Confusion Matrix:')
+        print(confusion_matrix(tags_predicted, true_tags))
 
         return tags_predicted
 

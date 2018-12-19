@@ -19,7 +19,7 @@ class MaximumEntropyClassifier:
     implements MEMM, training and inference methods
     """
 
-    def __init__(self, iterable_sentences, preprocess_dict):
+    def __init__(self, iterable_sentences, preprocess_dict, common_words):
         """
         iterable sentences:
             a tuple (tuples, tags, stripped_sentence)
@@ -43,7 +43,7 @@ class MaximumEntropyClassifier:
         print("Parsing iterables: %f s" % (time() - t1))
         t2 = time()
 
-        self.callable_functions = init_callable_features(poss, Params, preprocess_dict)
+        self.callable_functions = init_callable_features(poss, Params, preprocess_dict, common_words)
 
         # build matrices
         self.feature_matrix = build_feature_matrix_(X, y, sentences, self.callable_functions)
@@ -108,7 +108,9 @@ class MaximumEntropyClassifier:
 
     def compute_loss_second_term(self, v, X, sentences):
         """helper"""
-
+        # y_x_sum_rows = self.y_x_matrix.sum(axis=1)
+        # enabled = y_x_sum_rows.reshape(len(self.X), len(poss)).sum(axis=0)
+        # tag_weights = (enabled / enabled.sum()).T
         y_x_matrix = self.y_x_matrix  # shape (|Y|*|X|, m)
         y_x_sum_rows = self.y_x_matrix.sum(axis=1)
         dot_prod = y_x_matrix.dot(v)  # shape (|Y|*|X|, 1)

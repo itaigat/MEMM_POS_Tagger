@@ -1,5 +1,5 @@
 import collections
-from postagger.utils.common import pickle_load, pickle_save
+from postagger.utils.common import pickle_load, pickle_save, timeit
 
 preprocess_dict = {
     # needed here only for the keys
@@ -19,21 +19,26 @@ preprocess_dict = {
 # default values
 MIN_OCCURRENCE = 50
 TOP = 100
+TOP_COMMON_WORDS = 100
 
 
 class Preprocessor:
 
-    def __init__(self, iterable_sentences):
+    def __init__(self, iterable_sentences, top_words=None):
         self.X, self.y, self.sentences = [], [], []
+        self.words = []
         for tuples, tags, sentence in iterable_sentences:
             for i in range(len(tuples)):
                 self.X.append(tuples[i])
                 self.y.append(tags[i])
+                self.words.append(sentence[tuples[i][3]])
+
             self.sentences.append(sentence)
         # init dict
         self.pdict = {i: [] for i in preprocess_dict.keys()}
         self.min_occurrence = {i: MIN_OCCURRENCE for i in preprocess_dict.keys()}
         self.top = {i: TOP for i in preprocess_dict.keys()}
+        self.common_words = self.get_common_words(top_words)
 
     def count(self):
         """
@@ -44,6 +49,15 @@ class Preprocessor:
             self.extract_features(self.X[i], self.y[i], self.sentences[self.X[i][2]])
             # extract features
 
+    def count_features_num(self):
+        # helper for extract features
+        total = 0
+        for key, value in self.pdict.items():
+            m = len(value)
+            print("Preprocessor: features extracted for " + key + ' %d' % m)
+            total += m
+        print("Preprocessor: total features extracted: %d" % total)
+
     def summarize_counts(self, method, dict):
         """
         summarize the counts, using one of the methods
@@ -51,10 +65,20 @@ class Preprocessor:
         :param dict: parameters dict
         :return: preprocess_dict, input for classifier
         """
+
         if method == 'cut':
             return self.cut(dict)
         elif method == 'top':
             return self.top_occ(dict)
+
+    def get_common_words(self, top=None):
+        if top is None:
+            top = TOP_COMMON_WORDS
+
+        all_train_words = self.words
+        counter_obj = collections.Counter(all_train_words)
+        most_common_words = [x[0] for x in counter_obj.most_common(top)]
+        return most_common_words
 
     def cut(self, min_occurence=None):
         """process the dict results, apply minimum occurrence option"""
@@ -88,17 +112,24 @@ class Preprocessor:
         return pdict_top
 
     def extract_features(self, x, y, sentence):
-        self.f100(x, y, sentence)
-        self.f101(x, y, sentence)
-        self.f102(x, y, sentence)
+        # common words
+        word_id = x[3]
+        word = sentence[word_id]
+        if word in self.common_words:
+            self.f100(x, y, sentence)
+        # rare words
+        else:
+            self.f101(x, y, sentence)
+            self.f102(x, y, sentence)
+            self.f_capital_inside(x, y, sentence)
+            self.f_starting_capital(x, y, sentence)
+            self.f_number_inside(x, y, sentence)
+        # all words
         self.f103(x, y, sentence)
         self.f104(x, y, sentence)
         self.f105(x, y, sentence)
         self.f106(x, y, sentence)
         self.f107(x, y, sentence)
-        self.f_capital_inside(x, y, sentence)
-        self.f_starting_capital(x, y, sentence)
-        self.f_number_inside(x, y, sentence)
 
     def f100(self, x, y, sentence):
         word_id = x[3]
@@ -194,18 +225,20 @@ class Preprocessor:
                 self.pdict['number_inside'].append(tag)
                 break
 
-
-def load_save_preprocessed_data(filename, iterable_sentences):
+@timeit
+def load_save_preprocessed_data(filename, iterable_sentences, top_words, load):
     """return a preprocessor which applied count()"""
 
     # try loading
-    p = pickle_load(filename)
-    if p is not None:
-        return p
+    if load:
+        p = pickle_load(filename)
+        if p is not None:
+            return p
 
     # save and return loaded
-    p = Preprocessor(iterable_sentences)
+    p = Preprocessor(iterable_sentences, top_words)
     p.count()
+    p.count_features_num()
     ret = pickle_save(p, filename)
     if ret is None:
         return ret

@@ -58,7 +58,7 @@ class Wordtag(FeatureFunction):
         tag = kwargs['y']
         tup = (word, tag)
         if tup in self.tuples:
-            index = self.tuples.index(tup)
+            index = self.tuples[tup]
             data.append(1)
             i.append(0)
             j.append(index)
@@ -79,7 +79,7 @@ class Suffix(FeatureFunction):
         st_tuples = [(suffix, tag) for suffix in suffixes]
         for tup in st_tuples:
             if tup in self.tuples:
-                index = self.tuples.index(tup)
+                index = self.tuples[tup]
                 data.append(1)
                 i.append(0)
                 j.append(index)
@@ -101,7 +101,7 @@ class Prefix(FeatureFunction):
         pt_tuples = [(prefix, tag) for prefix in prefixes]
         for tup in pt_tuples:
             if tup in self.tuples:
-                index = self.tuples.index(tup)
+                index = self.tuples[tup]
                 data.append(1)
                 i.append(0)
                 j.append(index)
@@ -119,7 +119,7 @@ class Trigram(FeatureFunction):
         tag = kwargs['y']
         tup = (pre_pre_tag, pre_tag, tag)
         if tup in self.tuples:
-            index = self.tuples.index(tup)
+            index = self.tuples[tup]
             data.append(1)
             i.append(0)
             j.append(index)
@@ -136,7 +136,7 @@ class Bigram(FeatureFunction):
         tag = kwargs['y']
         tup = (pre_tag, tag)
         if tup in self.tuples:
-            index = self.tuples.index(tup)
+            index = self.tuples[tup]
             data.append(1)
             i.append(0)
             j.append(index)
@@ -152,7 +152,7 @@ class Unigram(FeatureFunction):
         data, i, j = [], [], []
         y = kwargs['y']
         if y in self.tuples:
-            index = self.tuples.index(y)
+            index = self.tuples[y]
             data.append(1)
             # relative indices (will be shifted later)
             i.append(0)  # this will always be 0 since we compute a row vector
@@ -172,7 +172,7 @@ class PreviousWord(FeatureFunction):
         tag = kwargs['y']
         tup = (prev_word, tag)
         if tup in self.tuples:
-            index = self.tuples.index(tup)
+            index = self.tuples[tup]
             data.append(1)
             i.append(0)
             j.append(index)
@@ -191,7 +191,7 @@ class NextWord(FeatureFunction):
         tag = kwargs['y']
         tup = (next_word, tag)
         if tup in self.tuples:
-            index = self.tuples.index(tup)
+            index = self.tuples[tup]
             data.append(1)
             i.append(0)
             j.append(index)
@@ -345,7 +345,8 @@ def init_callable_features(tags, params, preprocess_dict):
     for f in params.features_functions:
         if f.name in preprocess_dict:
             tuples = preprocess_dict[f.name]
-            callable = f(tags, tuples)
+            tuples_dict = {x:0 for x in tuples}
+            callable = f(tags, tuples_dict)
             callables.append(callable)
             total_features += callable.m
             print("Loaded feature function:" + f.name + ',' + "m=%d" % callable.m )

@@ -75,9 +75,8 @@ class MaximumEntropyClassifier:
 
         # save normalized parameters vector (normalization is needed as numeric fix for viterbi computations)
         norma = np.linalg.norm(res.x, ord=1)
-        self.v = res.x / norma
+        self.v = res.x / res.x.sum()
 
-        print("Optimization succeeded.")
         print('Weights vector shape: ', res.x.shape)
         print('Weights vector: ', res.x)
 
@@ -110,15 +109,17 @@ class MaximumEntropyClassifier:
 
     def compute_loss_second_term(self, v, X, sentences):
         """helper"""
+
         y_x_matrix = self.y_x_matrix  # shape (|Y|*|X|, m)
+        y_x_sum_rows = self.y_x_matrix.sum(axis=1)
         dot_prod = y_x_matrix.dot(v)  # shape (|Y|*|X|, 1)
-        dot_prod = dot_prod.reshape(-1, len(X))  # shape (|Y|, |X|)
+        dot_prod = dot_prod.reshape(len(poss), -1)  # shape (|Y|, |X|)
         # fixes numeric issues, break tests
         max_point = dot_prod.max()
         dot_prod = dot_prod - max_point
         dot_prod_scores = np.exp(dot_prod)
-        self.scores = copy.copy(dot_prod_scores)
-        ret = np.sum(dot_prod_scores, axis=1)  # shape (|X|,)
+        self.scores = copy.copy(dot_prod_scores) # shape (|Y|, |X|)
+        ret = np.sum(dot_prod_scores, axis=0)  # shape (|X|,)
         self.normas = copy.copy(ret)
         ret = np.log(ret + epsilon)  # numeric issues
         ret = np.sum(ret)
@@ -140,7 +141,7 @@ class MaximumEntropyClassifier:
         print("Grad second term: %f s" % (time() - t2))
         t3 = time()
 
-        reg_grad = np.sum(v)
+        reg_grad = v
 
         # recap goal: maximize L(v), hence we use -grad
         grad = -(first_term - second_term + reg_grad)
@@ -153,7 +154,9 @@ class MaximumEntropyClassifier:
     def compute_grad_second_term(self, v, X, sentences):
         """helper"""
         y_x_matrix = self.y_x_matrix  # shape (|Y|*|X|, m)
-        probs_matrix = self.scores / (self.normas.reshape(-1, 1) + epsilon)  # shape (|Y|, |X|) # fix numeric issue
+        # probs_matrix = self.scores / (self.normas.reshape
+        #                               (-1, 1) + epsilon)  # shape (|Y|, |X|) # fix numeric issue
+        probs_matrix = self.scores / (self.normas + epsilon)
         probs_matrix = probs_matrix.reshape(-1, 1)  # shape (|Y|*|X|, 1)
         product = y_x_matrix.multiply(probs_matrix)  # shape (|Y|*X|, m)
         grad_features = product.sum(axis=0)  # shape (m,)
@@ -207,7 +210,6 @@ class MaximumEntropyClassifier:
 
         sorted_dict = sorted(counts_dict.items(), key=operator.itemgetter(1), reverse=True)
         return sorted_dict
-
 
 
 def save_load_init_model(initialized_clf, filename):

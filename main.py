@@ -17,17 +17,17 @@ from postagger.utils.classifier import save_load_init_model
 
 
 min_occurrence_dict = {
-    'wordtag-f100': 5,
-    'suffix-f101': 5,
-    'prefix-f102': 5,
-    'trigram-f103': 5,
-    'bigram-f104': 5,
-    'unigram-f105': 5,
-    'previousword-f106': 5,
-    'nextword-f107': 5,
-    'starting_capital': 5,
-    'capital_inside': 5,
-    'number_inside': 5
+    'wordtag-f100': 9,
+    'suffix-f101': 9,
+    'prefix-f102': 9,
+    'trigram-f103': 9,
+    'bigram-f104': 9,
+    'unigram-f105': 9,
+    'previousword-f106': 9,
+    'nextword-f107': 9,
+    'starting_capital': 9,
+    'capital_inside': 9,
+    'number_inside': 9
 }
 
 top_occurrence = {
@@ -44,12 +44,14 @@ top_occurrence = {
     'number_inside': 3
 }
 
+top_common_words = 100
+
 @timeit
 def main(argv):
     # args
     # only matrices are saved, not the optimized clf
-    load_matrices_from_disk = True  # False means clf object will be saved, enable to debug clf.fit / predict
-    init_clf_filename = 'init_clf_top_occurrence.pickle'  # change when training a new model
+    load_matrices_from_disk = False  # False means clf object will be saved, enable to debug clf.fit / predict
+    init_clf_filename = 'init_clf_develop_matrices.pickle'  # change when training a new model
 
     if load_matrices_from_disk:
         clf = save_load_init_model(initialized_clf=None, filename=init_clf_filename)
@@ -59,8 +61,9 @@ def main(argv):
         train_sentences = CompData(train_path)
 
         # count features occurrences
-        preprocessor = load_save_preprocessed_data('train_preprocessed.pickle', train_sentences)
-        pdict = preprocessor.summarize_counts(method='top', dict=top_occurrence)
+        preprocessor = load_save_preprocessed_data('train_preprocessed_common.pickle', train_sentences,
+                                                   top_words=top_common_words, load=True)
+        pdict = preprocessor.summarize_counts(method='cut', dict=min_occurrence_dict)
 
         clf = MaximumEntropyClassifier(train_sentences, pdict)
         save_load_init_model(initialized_clf=clf, filename=init_clf_filename)
@@ -69,7 +72,7 @@ def main(argv):
     print("Training %d features" % clf.get_num_features())
     print("Top enabled features per tag: " + str(clf.get_enabled_features_per_tag()))
 
-    clf.fit(reg=10, verbose=1)
+    clf.fit(reg=10000, verbose=1)
 
     # evaluate
     test_path = get_data_path('test.wtag')

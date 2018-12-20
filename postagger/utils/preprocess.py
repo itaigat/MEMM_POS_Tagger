@@ -152,7 +152,8 @@ class Preprocessor:
         tag = y
         if len(word) >= 4:
             suffixes = [word[-2:], word[-3:]]
-            self.pdict['suffix-f101'] = self.pdict['suffix-f101'] + suffixes
+            tuples = [(w, tag) for w in suffixes]
+            self.pdict['suffix-f101'] = self.pdict['suffix-f101'] + tuples
 
     def f102(self, x, y, sentence):
         # prefix
@@ -161,7 +162,8 @@ class Preprocessor:
         tag = y
         if len(word) >= 4:
             prefixes = [word[:2], word[:3]]
-            self.pdict['prefix-f102'] = self.pdict['prefix-f102'] + prefixes
+            tuples = [(w, tag) for w in prefixes]
+            self.pdict['prefix-f102'] = self.pdict['prefix-f102'] + tuples
 
     def f103(self, x, y, sentence):
         # trigram

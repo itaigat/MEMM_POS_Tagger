@@ -56,7 +56,7 @@ def get_probabilities(x, w, sentences, callable_functions):
     """
     tags = copy(poss)
     # shape (|Y|*|X|, m)
-    y_x_matrix = build_y_x_matrix(X=x, poss=tags, sentences=sentences, feature_functions=callable_functions)
+    y_x_matrix, _ = build_y_x_matrix(X=x, poss=tags, sentences=sentences, feature_functions=callable_functions)
 
     dot_prod = y_x_matrix.dot(w)  # shape (|Y|*|X|, 1)
     dot_prod = dot_prod.reshape(-1, len(x))  # shape (|Y|, |X|)

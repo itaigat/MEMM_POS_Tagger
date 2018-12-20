@@ -383,18 +383,29 @@ def build_y_x_matrix(X, poss, sentences, feature_functions):
     # build features matrix
     current_row = 0
     data, row, col = [], [], []
+    data_help, row_help, col_help = [], [], []
+    help_j = 0
+
     for i, x in enumerate(X):
         for j, pos in enumerate(poss):
             cur_data, cur_i, cur_j = build_features(x, pos, sentences[x[2]], feature_functions, i_shift=current_row)
+
             # append
             data += cur_data
             row += cur_i
             col += cur_j
             current_row += 1
 
-    matrix = csr_matrix((data, (row, col)), shape=matrix_shape)
+            data_help += [1]
+            row_help += [i]
+            col_help += [help_j]
 
-    return matrix
+            help_j += 1
+
+    matrix = csr_matrix((data, (row, col)), shape=matrix_shape)
+    help_matrix = csr_matrix((data_help, (row_help, col_help)), shape=(len(X), help_j))
+
+    return matrix, help_matrix
 
 
 def build_feature_matrix_(X, y, sentences, feature_fncs):

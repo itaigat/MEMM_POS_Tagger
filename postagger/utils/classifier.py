@@ -14,6 +14,7 @@ from postagger.utils.score import accuracy, confusion_matrix
 epsilon = 1e-32  # for numeric issues
 
 
+
 class MaximumEntropyClassifier:
     """
     implements MEMM, training and inference methods
@@ -50,7 +51,7 @@ class MaximumEntropyClassifier:
         print("Building feature matrix: %f s" % (time() - t2))
         t3 = time()
 
-        self.y_x_matrix = build_y_x_matrix(X, poss, sentences, self.callable_functions)
+        self.y_x_matrix, self.help_matrix = build_y_x_matrix(X, poss, sentences, self.callable_functions)
         print("Building y_x features matrix: %f s" % (time() - t3))
 
         self.X = X
@@ -72,8 +73,7 @@ class MaximumEntropyClassifier:
         #                args=(self.feature_matrix, self.X, self.y, self.sentences),
         #                options={'disp': verbose, 'maxiter': 30})
 
-        res = fmin_l_bfgs_b(func=self.loss, x0=v_init, fprime=self.grad,
-                            args=(self.feature_matrix, self.X, self.y, self.sentences))
+        res = fmin_l_bfgs_b(func=self.L, x0=v_init, fprime=self.gradient)
 
         # save normalized parameters vector (normalization is needed as numeric fix for viterbi computations)
         norma = np.linalg.norm(res[0], ord=1)
@@ -81,6 +81,24 @@ class MaximumEntropyClassifier:
 
         print('Weights vector shape: ', res[0].shape)
         print('Weights vector: ', res[0])
+
+    def L(self, v):
+        a = self.feature_matrix.dot(v).sum()
+        b = np.sum(np.log(self.help_matrix * np.exp(self.y_x_matrix * v)))
+        c = 0.5 * self.reg * np.dot(v.transpose(), v)
+
+        res = - (a - b - c)
+
+        print(res)
+
+        return res
+
+    def gradient(self, v):
+        vt = v
+        expsums = 1.0 / (self.help_matrix.transpose() * (self.help_matrix * np.exp(self.y_x_matrix * vt)))
+        res = self.feature_matrix.sum(axis=0) - (self.y_x_matrix.transpose() * (expsums * np.exp(self.y_x_matrix * vt))).T - self.reg * vt.T
+        print(res*res.T)
+        return -res
 
     def loss(self, v, feature_matrix, X, y, sentences):
         """

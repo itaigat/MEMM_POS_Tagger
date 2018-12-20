@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import fmin_l_bfgs_b
 from postagger.utils.common import timeit
 from time import time
 import copy
@@ -68,16 +68,19 @@ class MaximumEntropyClassifier:
         v_init = np.zeros(m)
 
         # design note: minimize takes its own args (hence we pass loss, grad params without using self)
-        res = minimize(self.loss, v_init, method='L-BFGS-B', jac=self.grad,
-                       args=(self.feature_matrix, self.X, self.y, self.sentences),
-                       options={'disp': verbose})
+        # res = (self.loss, v_init, method='L-BFGS-B', jac=self.grad,
+        #                args=(self.feature_matrix, self.X, self.y, self.sentences),
+        #                options={'disp': verbose, 'maxiter': 30})
+
+        res = fmin_l_bfgs_b(func=self.loss, x0=v_init, fprime=self.grad,
+                            args=(self.feature_matrix, self.X, self.y, self.sentences))
 
         # save normalized parameters vector (normalization is needed as numeric fix for viterbi computations)
-        norma = np.linalg.norm(res.x, ord=1)
-        self.v = res.x / res.x.sum()
+        norma = np.linalg.norm(res[0], ord=1)
+        self.v = res[0] / res[0].sum()
 
-        print('Weights vector shape: ', res.x.shape)
-        print('Weights vector: ', res.x)
+        print('Weights vector shape: ', res[0].shape)
+        print('Weights vector: ', res[0])
 
     def loss(self, v, feature_matrix, X, y, sentences):
         """
@@ -103,7 +106,7 @@ class MaximumEntropyClassifier:
         # recap goal: maximize L(v)
         loss = - (first_term - second_term - reg)
         print("Loss final sum: %f s" % (time() - t4))
-        print(loss)
+        print("Loss: %f" % loss)
         return loss
 
     def compute_loss_second_term(self, v, X, sentences):
@@ -149,7 +152,7 @@ class MaximumEntropyClassifier:
         print("Grad last sum: %f s" % (time() - t3))
 
         grad = np.ravel(grad)
-
+        print("Grad sum: %f" % np.sum(grad**2))
         return grad
 
     def compute_grad_second_term(self, v, X, sentences):

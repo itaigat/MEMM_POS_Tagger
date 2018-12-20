@@ -221,7 +221,7 @@ class MaximumEntropyClassifier:
                 print("Tags: " + str(tags))
                 print("Pred: " + str(tmp))
 
-        print('Accuracy: ', accuracy(tags_predicted, true_tags))
+                print('Accuracy: ', accuracy(tags_predicted, true_tags))
         print('Confusion Matrix:')
         print(confusion_matrix(tags_predicted, true_tags))
 

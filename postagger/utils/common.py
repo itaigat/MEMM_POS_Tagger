@@ -166,10 +166,10 @@ def viterbi_s(sentence_id, sentence_lst, w, callable_functions):
         all_proba_dict_dict = {}
         for y0 in poss:
             if t != 1:
-                all_proba_dict_dict[y0] = get_probabilities([(y0, path[y0][-2], sentence_id, t - 1)], w,
+                all_proba_dict_dict[y0] = get_probabilities([(y0, path[y0][-2], sentence_id, t)], w,
                                                             sentence_lst, callable_functions)
             else:
-                all_proba_dict_dict[y0] = get_probabilities([(y0, '*', sentence_id, t - 1)], w, sentence_lst,
+                all_proba_dict_dict[y0] = get_probabilities([(y0, '*', sentence_id, t)], w, sentence_lst,
                                                             callable_functions)
         for y_idx, y in enumerate(poss):
             max_prob = - 1

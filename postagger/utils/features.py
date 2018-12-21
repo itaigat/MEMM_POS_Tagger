@@ -53,11 +53,10 @@ class FeatureFunction(ABC):
     """
     abstract class to hold the feature function and its output size
     """
-    def __init__(self, tags, tuples, common_words):
+    def __init__(self, tags, tuples):
         self.tags = tags
         self.tuples = tuples
         self.m = self.compute_size()
-        self.common_words = common_words
 
     def compute_size(self):
         """:return: feature vector size """
@@ -76,8 +75,6 @@ class Wordtag(FeatureFunction):
     def __call__(self, **kwargs):
         data, i, j = [], [], []
         word = extract_current_word(**kwargs)
-        if word not in self.common_words:
-            return data, i, j
         tag = kwargs['y']
         tup = (word, tag)
         if tup in self.tuples:
@@ -95,11 +92,9 @@ class Suffix(FeatureFunction):
     def __call__(self, **kwargs):
         data, i, j = [], [], []
         word = extract_current_word(**kwargs)
-        if word in self.common_words:
-            return data, i, j
         suffixes = []
         if len(word) >= 4:
-            suffixes = [word[-2:], word[-3:]]
+            suffixes = [word[-i:] for i in range(1, 5)]
         tag = kwargs['y']
         st_tuples = [(suffix, tag) for suffix in suffixes]
         for tup in st_tuples:
@@ -119,11 +114,9 @@ class Prefix(FeatureFunction):
     def __call__(self, **kwargs):
         data, i, j = [], [], []
         word = extract_current_word(**kwargs)
-        if word in self.common_words:
-            return data, i, j
         prefixes = []
         if len(word) >= 4:
-            prefixes = [word[:2], word[:3]]
+            prefixes = [word[:i] for i in range(1, 5)]
         tag = kwargs['y']
         pt_tuples = [(prefix, tag) for prefix in prefixes]
         for tup in pt_tuples:
@@ -235,8 +228,6 @@ class CapitalStart(FeatureFunction):
         if tag not in self.tuples:
             return data, i, j
         word = extract_current_word(**kwargs)
-        if word in self.common_words:
-            return data, i, j
         if word[0].isupper():
             data.append(1)
             i.append(0)
@@ -253,8 +244,6 @@ class Capital(FeatureFunction):
         tag = kwargs['y']
         word = extract_current_word(**kwargs)
         if tag not in self.tuples or len(word) <= 1:
-            return data, i, j
-        if word in self.common_words:
             return data, i, j
         for c in word[1:]:
             if c.isupper():
@@ -275,8 +264,6 @@ class Numeric(FeatureFunction):
         if tag not in self.tuples:
             return data, i, j
         word = extract_current_word(**kwargs)
-        if word in self.common_words:
-            return data, i, j
         for c in word:
             if c.isdigit():
                 data.append(1)
@@ -296,8 +283,6 @@ class Hyphen(FeatureFunction):
         if tag not in self.tuples:
             return data, i, j
         word = extract_current_word(**kwargs)
-        if word in self.common_words:
-            return data, i, j
         if '-' in word:
             data.append(1)
             i.append(0)
@@ -434,7 +419,7 @@ def build_feature_matrix_(X, y, sentences, feature_fncs):
     return matrix
 
 
-def init_callable_features(tags, params, preprocess_dict, common_words):
+def init_callable_features(tags, params, preprocess_dict):
     """
     takes output of preprocess which is a list of tuples for each feature
     e.g., for Bigram the module should provide a list [('DT', 'NN')..]
@@ -447,8 +432,7 @@ def init_callable_features(tags, params, preprocess_dict, common_words):
         if f.name in preprocess_dict:
             tuples = preprocess_dict[f.name]
             tuples_dict = {x: i for i, x in enumerate(tuples)}
-            common_words_dict = {x: 0 for x in common_words}
-            callable = f(tags, tuples_dict, common_words_dict)
+            callable = f(tags, tuples_dict)
             callables.append(callable)
             total_features += callable.m
             print("Loaded feature function:" + f.name + ',' + "m=%d" % callable.m )

@@ -1,33 +1,15 @@
 import collections
 from postagger.utils.common import pickle_load, pickle_save, timeit
+from postagger.utils.params import Params
 
-preprocess_dict = {
-    # needed here only for the keys
-    'wordtag-f100': [('the', 'DT')],
-    'suffix-f101': [('ing', 'VBG')],
-    'prefix-f102': [('pre', 'NN')],
-    'trigram-f103': [('DT', 'JJ', 'NN')],
-    'bigram-f104': [('DT', 'JJ')],
-    'unigram-f105': ['DT'],
-    'previousword-f106': [('the', 'NNP')],
-    'nextword-f107': [('the', 'VB')],
-    'starting_capital': ['DT'],
-    'capital_inside': ['NN'],
-    'number_inside': ['CD'],
-    'hyphen_inside': 0,
-    'pre_pre_word': 0,
-    'next_next_word': 0
-}
-
-# default values
+# defaults for filtering methods
 MIN_OCCURRENCE = 50
 TOP = 100
-TOP_COMMON_WORDS = 100
 
 
 class Preprocessor:
 
-    def __init__(self, iterable_sentences, top_words=None):
+    def __init__(self, iterable_sentences):
         self.X, self.y, self.sentences = [], [], []
         self.words = []
         for tuples, tags, sentence in iterable_sentences:
@@ -38,10 +20,9 @@ class Preprocessor:
 
             self.sentences.append(sentence)
         # init dict
-        self.pdict = {i: [] for i in preprocess_dict.keys()}
-        self.min_occurrence = {i: MIN_OCCURRENCE for i in preprocess_dict.keys()}
-        self.top = {i: TOP for i in preprocess_dict.keys()}
-        self.common_words = self.get_common_words(top_words)
+        self.pdict = {i: [] for i in Params.preprocess_dict.keys()}
+        self.min_occurrence = {i: MIN_OCCURRENCE for i in Params.preprocess_dict.keys()}
+        self.top = {i: TOP for i in Params.preprocess_dict.keys()}
 
     def count(self):
         """
@@ -74,20 +55,11 @@ class Preprocessor:
         elif method == 'top':
             return self.top_occ(dict)
 
-    def get_common_words(self, top=None):
-        if top is None:
-            top = TOP_COMMON_WORDS
-
-        all_train_words = self.words
-        counter_obj = collections.Counter(all_train_words)
-        most_common_words = [x[0] for x in counter_obj.most_common(top)]
-        return most_common_words
-
     def cut(self, min_occurence=None):
         """process the dict results, apply minimum occurrence option"""
         # first each of the list possibly contain duplicate tuples
         # we will count them and cast them into sets
-        pdict_cut = {i: [] for i in preprocess_dict.keys()}
+        pdict_cut = {i: [] for i in Params.preprocess_dict.keys()}
         print("Summarizing counts")
         if min_occurence is None:
             min_occurence = self.min_occurrence
@@ -102,31 +74,27 @@ class Preprocessor:
 
     def top_occ(self, top=None):
         """Top features by occurrence"""
-        pdict_top = {i: [] for i in preprocess_dict.keys()}
+        pdict_top = {i: [] for i in Params.preprocess_dict.keys()}
         print("Preprocessor: summarizing counts")
         if top is None:
             top = self.top
         for feature, tuple_list in self.pdict.items():
             counts_dict = collections.Counter(tuple_list)
             # extract relevant counts
-            for elem, count in counts_dict.most_common(top[feature]):
+            for elem, count in counts_dict.items():
                 pdict_top[feature].append(elem)
 
         return pdict_top
 
     def extract_features(self, x, y, sentence):
-        # common words
         word_id = x[3]
         word = sentence[word_id]
-        if word in self.common_words:
-            self.f100(x, y, sentence)
-        # rare words
-        else:
-            self.f101(x, y, sentence)
-            self.f102(x, y, sentence)
-            self.f_capital_inside(x, y, sentence)
-            self.f_starting_capital(x, y, sentence)
-            self.f_number_inside(x, y, sentence)
+        self.f100(x, y, sentence)
+        self.f101(x, y, sentence)
+        self.f102(x, y, sentence)
+        self.f_capital_inside(x, y, sentence)
+        self.f_starting_capital(x, y, sentence)
+        self.f_number_inside(x, y, sentence)
         # all words
         self.f103(x, y, sentence)
         self.f104(x, y, sentence)
@@ -151,7 +119,7 @@ class Preprocessor:
         word = sentence[word_id]
         tag = y
         if len(word) >= 4:
-            suffixes = [word[-2:], word[-3:]]
+            suffixes = [word[-i:] for i in range(1, 5)]
             tuples = [(w, tag) for w in suffixes]
             self.pdict['suffix-f101'] = self.pdict['suffix-f101'] + tuples
 
@@ -161,7 +129,7 @@ class Preprocessor:
         word = sentence[word_id]
         tag = y
         if len(word) >= 4:
-            prefixes = [word[:2], word[:3]]
+            prefixes = [word[:i] for i in range(1, 5)]
             tuples = [(w, tag) for w in prefixes]
             self.pdict['prefix-f102'] = self.pdict['prefix-f102'] + tuples
 
@@ -261,7 +229,7 @@ class Preprocessor:
 
 
 @timeit
-def load_save_preprocessed_data(filename, iterable_sentences, top_words, load):
+def load_save_preprocessed_data(filename, iterable_sentences, load):
     """return a preprocessor which applied count()"""
 
     # try loading
@@ -270,8 +238,10 @@ def load_save_preprocessed_data(filename, iterable_sentences, top_words, load):
         if p is not None:
             return p
 
+    print("Preprocessor: started")
     # save and return loaded
-    p = Preprocessor(iterable_sentences, top_words)
+    p = Preprocessor(iterable_sentences)
+    print("Preprocessor: counting")
     p.count()
     p.count_features_num()
     ret = pickle_save(p, filename)

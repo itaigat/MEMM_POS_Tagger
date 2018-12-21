@@ -1,11 +1,9 @@
 import os
-import time
 from copy import copy
-from os.path import join, dirname
+from os.path import join
 import pickle
 import numpy as np
 import time
-from postagger.utils.params import Params
 
 from postagger.utils.features import build_y_x_matrix
 
@@ -56,17 +54,10 @@ def get_probabilities(x, w, sentences, callable_functions):
     """
     tags = copy(poss)
     # shape (|Y|*|X|, m)
-    y_x_matrix, _ = build_y_x_matrix(X=x, poss=tags, sentences=sentences, feature_functions=callable_functions)
-
-    dot_prod = y_x_matrix.dot(w)  # shape (|Y|*|X|, 1)
-    dot_prod = dot_prod.reshape(-1, len(x))  # shape (|Y|, |X|)
-
-    scores = np.exp(dot_prod)
-    norma = np.sum(scores)  # shape (1,)
-
-    probs_matrix = scores / norma  # shape (|Y|, |X|)
-    probs_matrix = probs_matrix.reshape(-1, 1)  # shape (|Y|*|X|, 1)
-
+    y_x_matrix, help_matrix = build_y_x_matrix(X=x, poss=tags, sentences=sentences,
+                                               feature_functions=callable_functions)
+    sums = 1.0 / (help_matrix.transpose() * (help_matrix * np.exp(y_x_matrix * w)))
+    probs_matrix = sums * np.exp(y_x_matrix * w)
     return probs_matrix
 
 
@@ -233,27 +224,3 @@ poss = ['CC', 'CD', 'DT', 'EX', 'FW', 'IN', 'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN'
 poss = ['RBR', '``', 'JJS', ',', 'VBG', 'VBZ', 'TO', 'MD', 'JJ', 'RB', 'VBP', '-LRB-', 'DT', 'WP$', 'PDT', 'CD', 'NN',
         'WP', 'VB', '$', 'POS', 'WRB', 'IN', 'VBN', 'NNP', 'RP', 'EX', 'JJR', 'PRP', '-RRB-', "''", 'VBD', '.', 'RBS',
         ':', 'PRP$', 'NNS', 'WDT', 'CC', 'UH']
-
-# if __name__ == '__main__':
-#     # test get_probab
-#     preprocess_dict = {
-#         'wordtag-f100': [('the', 'DT')],
-#         'suffix-f101': [('ing', 'VBG')],
-#         'prefix-f102': [('pre', 'NN')],
-#         'trigram-f103': [('DT', 'JJ', 'NN')],  # TODO: broken, param optimized is zero
-#         'bigram-f104': [('DT', 'JJ')],
-#         'unigram-f105': ['DT'],
-#         'previousword-f106': [('the', 'NNP')],  # TODO: broken, param optimized is zero
-#         'nextword-f107': [('the', 'VB')],
-#         'starting_capital': ['DT'],
-#         'capital_inside': ['NN'],
-#         'number_inside': ['CD']
-#     }
-#     x = [('DT', 'NN', 0, 2), ('DT', 'DT', 0, 1)]
-#     tags = poss
-#     sentences = [['The', 'dog', 'walks']]
-#     w = np.random.rand(11)
-#     callables = init_callable_features(tags, Params, preprocess_dict)
-#     v = get_probabilities(x, sentences, w, callables)
-#     print(viterbi(2, sentences[0], w, callables))
-#     print(v)

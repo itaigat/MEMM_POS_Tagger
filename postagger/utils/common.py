@@ -54,73 +54,142 @@ def get_probabilities(x, w, sentences, callable_functions):
     """
     tags = copy(poss)
     # shape (|Y|*|X|, m)
-    y_x_matrix, _ = build_y_x_matrix(X=x, poss=tags, sentences=sentences, feature_functions=callable_functions)
-
-    dot_prod = y_x_matrix.dot(w)  # shape (|Y|*|X|, 1)
-    dot_prod = dot_prod.reshape(-1, len(x))  # shape (|Y|, |X|)
-
-    scores = np.exp(dot_prod)
-    norma = np.sum(scores)  # shape (1,)
-
-    probabilities_matrix = scores / norma  # shape (|Y|, |X|)
-    probabilities_matrix = probabilities_matrix.reshape(-1, 1)  # shape (|Y|*|X|, 1)
-
-    return probabilities_matrix
+    y_x_matrix, help_matrix = build_y_x_matrix(X=x, poss=tags, sentences=sentences,
+                                               feature_functions=callable_functions)
+    sums = 1.0 / (help_matrix.transpose() * (help_matrix * np.exp(y_x_matrix * w)))
+    probs_matrix = sums * np.exp(y_x_matrix * w)
+    return probs_matrix
 
 
-def viterbi_s(sentence_id, sentence_lst, w, callable_functions):
+def max_probabilities(probability_dic, sk2, u, v, w, sentence_id, sentence_list, word_id, tmp_probabilities_dic,
+                      callable_functions):
+    max_probability = 0
+    argmax_probability = ''
+    v_index = poss.index(v)
+
+    for tag in sk2:
+        if (u, tag) not in tmp_probabilities_dic.keys():
+            tmp_probabilities_dic[(u, tag)] = get_probabilities([(tag, u, sentence_id, word_id)], w, sentence_list,
+                                                                callable_functions)
+
+        tmp = probability_dic[(word_id - 1, tag, u)] * tmp_probabilities_dic[(u, tag)][v_index][0]
+
+        if tmp > max_probability:
+            max_probability = tmp
+            argmax_probability = tag
+
+    return max_probability, argmax_probability
+
+
+def pie_arg_max(probability_dic, sentence):
+    u_max, v_max = '', ''
+    max_probability = 0
+    last_idx_sentence = len(sentence) - 1
+
+    for u in poss:
+        for v in poss:
+            if probability_dic[(last_idx_sentence, u, v)] > max_probability:
+                max_probability = probability_dic[(last_idx_sentence, u, v)]
+                u_max, v_max = u, v
+
+    return u_max, v_max
+
+
+def init_s(idx):
+    s = copy(poss)
+
+    if idx == 0:
+        return s, ['*'], ['*']
+    elif idx == 1:
+        return s, s, ['*']
+    else:
+        return s, s, s
+
+
+def viterbi(sentence_id, sentence_lst, w, callable_functions):
+    sentence = sentence_lst[sentence_id]
+    len_sentence = len(sentence)
+    tags = ['' for i in range(len_sentence)]
+    path = []
+
+    tmp_probabilities_dic = {}
+    probability_dic = {(-1, '*', '*'): 1}
+    bp = {}
     start = time.time()
-    path_dict, V_paths = {}, [{}]
-    state = None
+    for idx, word in enumerate(sentence):
+        s_current, sk1, sk2 = init_s(idx)
+        for v in s_current:
+            for u in sk1:
+                probability_dic[(idx, u, v)], bp[(idx, u, v)] = max_probabilities(probability_dic, sk2, u, v, w,
+                                                                                  sentence_id, sentence_lst, idx,
+                                                                                  tmp_probabilities_dic,
+                                                                                  callable_functions)
+    tags[len_sentence - 2], tags[len_sentence - 1] = pie_arg_max(probability_dic, sentence)
 
-    first_state = get_probabilities([('*', '*', sentence_id, 0)], w, sentence_lst, callable_functions)
-
-    for idx, y in enumerate(poss):
-        current_probability = first_state[idx]
-        V_paths[0][y] = current_probability
-        path_dict[y] = [y]
-
-    for t in range(1, len(sentence_lst[sentence_id])):
-        V_paths.append({})
-        new_path_dict = {}
-        all_probabilities_dict_dict = {}
-
-        for y0 in poss:
-            if t != 1:
-                all_probabilities_dict_dict[y0] = get_probabilities([(y0, path_dict[y0][-2], sentence_id, t)], w,
-                                                                    sentence_lst, callable_functions)
-            else:
-                all_probabilities_dict_dict[y0] = get_probabilities([(y0, '*', sentence_id, t)], w, sentence_lst,
-                                                                    callable_functions)
-
-        for y_idx, y in enumerate(poss):
-            max_prob = - 1
-            last = None
-            for y0 in poss:
-                current_probability = V_paths[t - 1][y0]
-                probabilities_dict = all_probabilities_dict_dict[y0]
-                current_probability = current_probability * probabilities_dict[y_idx]
-
-                if current_probability > max_prob:
-                    max_prob = current_probability
-                    last = y0
-
-            V_paths[t][y] = max_prob
-            new_path_dict[y] = path_dict[last] + [y]
-
-        path_dict = new_path_dict
-    prob = -1
-
-    for y in poss:
-        cur_prob = V_paths[len(sentence_lst[sentence_id]) - 1][y]
-        if cur_prob > prob:
-            prob = cur_prob
-            state = y
+    for k in range(len_sentence - 3, -1, -1):
+        tag = bp[(k + 2, tags[k + 1], tags[k + 2])]
+        tags[k] = tag
 
     end = time.time()
     print(end - start)
 
-    return path_dict[state]
+    return list(reversed(tags))
+
+
+def viterbi_s(sentence_id, sentence_lst, w, callable_functions):
+    start = time.time()
+    V = [{}]
+    count = 0
+
+    path = {}
+
+    first_state = get_probabilities([('*', '*', sentence_id, 0)], w, sentence_lst, callable_functions)
+
+    for idx, y in enumerate(poss):
+        curr_prob = first_state[idx]
+        V[0][y] = curr_prob
+        path[y] = [y]
+
+    for t in range(1, len(sentence_lst[sentence_id])):
+        V.append({})
+        new_path = {}
+        # curr_obs = features_list[t]
+        all_proba_dict_dict = {}
+        for y0 in poss:
+            if t != 1:
+                all_proba_dict_dict[y0] = get_probabilities([(y0, path[y0][-2], sentence_id, t)], w,
+                                                            sentence_lst, callable_functions)
+            else:
+                all_proba_dict_dict[y0] = get_probabilities([(y0, '*', sentence_id, t)], w, sentence_lst,
+                                                            callable_functions)
+        for y_idx, y in enumerate(poss):
+            max_prob = - 1
+            former_state = None
+            for y0 in poss:
+                curr_prob = V[t - 1][y0]
+                # curr_obs = obs_dict[y0]
+                proba_dict = all_proba_dict_dict[y0]
+                curr_prob = curr_prob * proba_dict[y_idx]
+
+                if curr_prob > max_prob:
+                    max_prob = curr_prob
+                    former_state = y0
+            V[t][y] = max_prob
+            new_path[y] = path[former_state] + [y]
+
+        path = new_path
+
+    prob = -1
+    for y in poss:
+        cur_prob = V[len(sentence_lst[sentence_id]) - 1][y]
+        if cur_prob > prob:
+            prob = cur_prob
+            state = y
+    end = time.time()
+    print(end - start)
+
+    # return prob, path[state]
+    return path[state]
 
 
 def pickle_load(filename):
@@ -145,13 +214,26 @@ def pickle_save(obj, filename):
         return None
 
 
-# Part Of Speech from the template
+'''
+Part Of Speech from the template
 poss = ['CC', 'CD', 'DT', 'EX', 'FW', 'IN', 'JJ', 'JJR', 'JJS', 'LS', 'MD', 'NN', 'NNS', 'NNP', 'NNPS', 'PDT',
         'POS', 'PRP', 'PRP$', 'RB', 'RBR', 'RBS', 'RP', 'SYM', 'TO', 'UH', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ',
         'WDT', 'WP', 'WP$', 'WRB', '#', '$', "''", '``', '(', ')', ',', '.', ':']
 
-"""
 poss = ['RBR', '``', 'JJS', ',', 'VBG', 'VBZ', 'TO', 'MD', 'JJ', 'RB', 'VBP', '-LRB-', 'DT', 'WP$', 'PDT', 'CD', 'NN',
         'WP', 'VB', '$', 'POS', 'WRB', 'IN', 'VBN', 'NNP', 'RP', 'EX', 'JJR', 'PRP', '-RRB-', "''", 'VBD', '.', 'RBS',
         ':', 'PRP$', 'NNS', 'WDT', 'CC', 'UH']
-"""
+
+poss_train = ['RBR', '``', 'JJS', ',', 'VBG', 'VBZ', 'TO', 'MD', 'JJ', 'RB', 'VBP', '-LRB-', 'DT', 'WP$', 'PDT', 'CD',
+            'NN', 'WP', 'VB', '$', 'POS', 'WRB', 'IN', 'VBN', 'NNP', 'RP', 'EX', 'JJR', 'PRP', '-RRB-', "''", 'VBD',
+            '.', 'RBS', ':', 'PRP$', 'NNS', 'WDT', 'CC', 'UH', 'SYM', 'NNPS', 'FW', '#']
+
+poss_2 = ['WP', 'JJS', 'LS', 'RBS', 'SYM', 'RBR','NNP', 'JJR', 'RP', 'EX', 'RB', 'PRP', 'VBP', 'IN', 'NN',
+          'DT', 'JJ',  'MD','VB', 'TO','NNS', 'VBD', 'CC', 'WDT','VBG', 'VBN', 'VBZ', 'CD', 'FW', 'WRB',
+          'PDT',',', ':', '.']
+'''
+
+# LS is in train2 but not in train
+poss = ['RBR', '``', 'JJS', ',', 'VBG', 'VBZ', 'TO', 'MD', 'JJ', 'RB', 'VBP', '-LRB-', 'DT', 'WP$', 'PDT', 'CD',
+        'NN', 'WP', 'VB', '$', 'POS', 'WRB', 'IN', 'VBN', 'NNP', 'RP', 'EX', 'JJR', 'PRP', '-RRB-', "''", 'VBD',
+        '.', 'RBS', ':', 'PRP$', 'NNS', 'WDT', 'CC', 'UH', 'SYM', 'NNPS', 'FW', '#']

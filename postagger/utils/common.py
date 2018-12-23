@@ -2,7 +2,6 @@ import os
 import pickle
 import numpy as np
 import time
-
 from copy import copy
 from os.path import join
 from postagger.utils.features import build_y_x_matrix

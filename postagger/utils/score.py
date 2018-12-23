@@ -1,7 +1,8 @@
 import numpy as np
+import operator
+
 from postagger.utils.params import Params
 from copy import copy
-import operator
 
 
 def accuracy(predicted, true):

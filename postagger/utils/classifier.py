@@ -7,7 +7,7 @@ from postagger.utils.features import build_y_x_matrix, build_feature_matrix_, in
 from postagger.utils.params import Params
 from postagger.utils.common import viterbi_s, get_poss_dict
 from postagger.utils.common import pickle_save, pickle_load
-from postagger.utils.score import accuracy, confusion_matrix
+from postagger.utils.score import accuracy, get_top_k_errors
 
 
 class MaximumEntropyClassifier:
@@ -124,9 +124,9 @@ class MaximumEntropyClassifier:
 
                 print('Accuracy: ', accuracy(tags_predicted, true_tags))
 
-        print('Total Accuracy: ', accuracy(tags_predicted, true_tags))
+        print("Total accuracy: ", accuracy(tags_predicted, true_tags))
+        print('Top K errors: ', get_top_k_errors(tags_predicted, true_tags, get_poss_dict(self.poss), k=10))
         print('Confusion Matrix:')
-        print(confusion_matrix(tags_predicted, true_tags, get_poss_dict(self.poss)))
 
         return tags_predicted
 

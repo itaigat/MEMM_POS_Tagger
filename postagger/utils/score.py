@@ -1,5 +1,6 @@
 import numpy as np
 import operator
+import collections
 
 from postagger.utils.params import Params
 from copy import copy
@@ -35,7 +36,7 @@ def confusion_matrix(predicted, true, pos_dict, k=10):
 
             if true[prediction_idx][word_id] != word:
                 error_count[pos_dic[word]] += 1
-    """
+
     for i in range(k):
         tmp = max(error_count.items(), key=operator.itemgetter(1))[0]
         top_error.append(tmp)
@@ -45,7 +46,21 @@ def confusion_matrix(predicted, true, pos_dict, k=10):
         cm_top.append(cm[top_error[i]])
 
     return cm, cm_top
-    """
+
+
+def get_top_k_errors(predicted, true, pos_dict, k=10):
+
+    errors = list()
+    for prediction_idx, prediction in enumerate(predicted):
+        for word_id, tag in enumerate(prediction):
+            truth = true[prediction_idx][word_id]
+            predicted = tag
+            if truth != predicted:
+                errors.append((truth, predicted))
+
+    count_dict = collections.Counter(errors)
+
+    return count_dict.most_common(k)
 
 
 def precision(predicted, true):

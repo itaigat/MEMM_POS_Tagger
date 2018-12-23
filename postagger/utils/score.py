@@ -1,4 +1,6 @@
 import numpy as np
+import operator
+
 from postagger.utils.params import Params
 from copy import copy
 
@@ -19,16 +21,30 @@ def accuracy(predicted, true):
     return count_true / word_count
 
 
-def confusion_matrix(predicted, true):
+def confusion_matrix(predicted, true, k=10):
     pos_dic = copy(Params.pos_dic)
     len_pos = len(Params.poss)
     cm = np.zeros((len_pos, len_pos))
+    error_count = {pos: 0 for i, pos in pos_dic.items()}
+    top_error = []
+    cm_top = []
 
     for prediction_idx, prediction in enumerate(predicted):
         for word_id, word in enumerate(prediction):
             cm[pos_dic[true[prediction_idx][word_id]], pos_dic[word]] += 1
 
-    return cm
+            if true[prediction_idx][word_id] != word:
+                error_count[pos_dic[word]] += 1
+
+    for i in range(k):
+        tmp = max(error_count.items(), key=operator.itemgetter(1))[0]
+        top_error.append(tmp)
+        error_count.pop(tmp, None)
+
+    for i in range(k):
+        cm_top.append(cm[top_error[i]])
+
+    return cm, cm_top
 
 
 def precision(predicted, true):
@@ -81,3 +97,15 @@ def F1(predicted, true):
     recall_score = recall(predicted, true)
 
     return 2 * ((precision_score * recall_score) / (precision_score + recall_score))
+
+
+def tag_test_file(data, tags):
+    tagged_st = ''
+    for sentence_idx, sentence in enumerate(data):
+        for word_idx, word in enumerate(sentence):
+            tagged_st += word + '_' + tags[sentence_idx][word_idx]
+        tagged_st += '\n'
+
+    return tagged_st
+
+

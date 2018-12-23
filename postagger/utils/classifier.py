@@ -4,9 +4,8 @@ from postagger.utils.common import timeit
 from time import time
 import operator
 from postagger.utils.features import build_y_x_matrix, build_feature_matrix_, init_callable_features
-from postagger.utils.common import poss
 from postagger.utils.params import Params
-from postagger.utils.common import viterbi_s
+from postagger.utils.common import viterbi_s, get_poss_dict
 from postagger.utils.common import pickle_save, pickle_load
 from postagger.utils.score import accuracy, confusion_matrix
 
@@ -17,7 +16,7 @@ class MaximumEntropyClassifier:
     """
 
     @timeit
-    def __init__(self, iterable_sentences, preprocess_dict):
+    def __init__(self, iterable_sentences, preprocess_dict, poss):
         """
         iterable sentences:
             a tuple (tuples, tags, stripped_sentence)
@@ -56,6 +55,7 @@ class MaximumEntropyClassifier:
         self.reg = 0
         self.v = None
         self.verbose = 0
+        self.poss = poss
 
     @timeit
     def fit(self, reg=0, verbose=0):
@@ -115,7 +115,7 @@ class MaximumEntropyClassifier:
             return None
         else:
             for tuples, tags, sentence in X:
-                tmp = viterbi_s(tuples[0][2], sentences, self.v, self.callable_functions)
+                tmp = viterbi_s(tuples[0][2], sentences, self.v, self.callable_functions, self.poss)
                 tags_predicted.append(tmp)
                 true_tags.append(tags)
                 print("Sentence: " + str(sentence))
@@ -123,8 +123,10 @@ class MaximumEntropyClassifier:
                 print("Pred: " + str(tmp))
 
                 print('Accuracy: ', accuracy(tags_predicted, true_tags))
+
+        print('Total Accuracy: ', accuracy(tags_predicted, true_tags))
         print('Confusion Matrix:')
-        print(confusion_matrix(tags_predicted, true_tags))
+        print(confusion_matrix(tags_predicted, true_tags, get_poss_dict(self.poss)))
 
         return tags_predicted
 
@@ -133,11 +135,11 @@ class MaximumEntropyClassifier:
 
     def get_enabled_features_per_tag(self):
         y_x_sum_rows = self.y_x_matrix.sum(axis=1)
-        enabled = y_x_sum_rows.reshape(len(self.X), len(poss)).sum(axis=0)
+        enabled = y_x_sum_rows.reshape(len(self.X), len(self.poss)).sum(axis=0)
         counts = enabled.tolist()[0]
         tuples_list = []
         for i,count in enumerate(counts):
-            tup = (poss[i], count)
+            tup = (self.poss[i], count)
             tuples_list.append(tup)
 
         counts_dict = dict(tuples_list)

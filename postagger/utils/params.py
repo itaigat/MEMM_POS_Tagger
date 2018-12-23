@@ -5,11 +5,6 @@ from postagger.utils.features import Wordtag, Suffix, Prefix, Unigram, Bigram, T
 class Params:
     features_functions = [Wordtag, Suffix, Prefix, Unigram, Bigram, Trigram, PreviousWord, NextWord,
                           Capital, CapitalStart, Numeric, Hyphen, PrePreWord, NextNextWord]
-    poss = ['RBR', '``', 'JJS', ',', 'VBG', 'VBZ', 'TO', 'MD', 'JJ', 'RB', 'VBP', '-LRB-', 'DT', 'WP$', 'PDT', 'CD',
-            'NN',
-            'WP', 'VB', '$', 'POS', 'WRB', 'IN', 'VBN', 'NNP', 'RP', 'EX', 'JJR', 'PRP', '-RRB-', "''", 'VBD', '.',
-            'RBS',
-            ':', 'PRP$', 'NNS', 'WDT', 'CC', 'UH']
 
     preprocess_dict = {
         'wordtag-f100': [('the', 'DT')],
@@ -27,8 +22,3 @@ class Params:
         'pre_pre_word': ['IN'],
         'next_next_word': ['DT']
     }
-    pos_dic = {}
-
-    for idx, pos in enumerate(poss):
-        pos_dic[pos] = idx
-

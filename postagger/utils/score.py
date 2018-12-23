@@ -21,9 +21,9 @@ def accuracy(predicted, true):
     return count_true / word_count
 
 
-def confusion_matrix(predicted, true, k=10):
-    pos_dic = copy(Params.pos_dic)
-    len_pos = len(Params.poss)
+def confusion_matrix(predicted, true, pos_dict, k=10):
+    pos_dic = pos_dict
+    len_pos = len(pos_dict.keys())
     cm = np.zeros((len_pos, len_pos))
     error_count = {pos: 0 for i, pos in pos_dic.items()}
     top_error = []
@@ -35,7 +35,7 @@ def confusion_matrix(predicted, true, k=10):
 
             if true[prediction_idx][word_id] != word:
                 error_count[pos_dic[word]] += 1
-
+    """
     for i in range(k):
         tmp = max(error_count.items(), key=operator.itemgetter(1))[0]
         top_error.append(tmp)
@@ -45,6 +45,7 @@ def confusion_matrix(predicted, true, k=10):
         cm_top.append(cm[top_error[i]])
 
     return cm, cm_top
+    """
 
 
 def precision(predicted, true):

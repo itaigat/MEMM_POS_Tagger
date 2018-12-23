@@ -48,11 +48,11 @@ def get_data_path(data_file='train_dev.wtag'):
     return path
 
 
-def get_probabilities(x, w, sentences, callable_functions):
+def get_probabilities(x, w, sentences, callable_functions, poss):
     """
     computes q(v|u,t,sent_id,word_id)
     """
-    tags = copy(poss)
+    tags = poss
     # shape (|Y|*|X|, m)
     y_x_matrix, help_matrix = build_y_x_matrix(X=x, poss=tags, sentences=sentences,
                                                feature_functions=callable_functions)
@@ -62,12 +62,12 @@ def get_probabilities(x, w, sentences, callable_functions):
 
 
 
-def viterbi_s(sentence_id, sentence_lst, w, callable_functions):
+def viterbi_s(sentence_id, sentence_lst, w, callable_functions, poss):
     start = time.time()
     path_dict, V_paths = {}, [{}]
     state = None
 
-    first_state = get_probabilities([('*', '*', sentence_id, 0)], w, sentence_lst, callable_functions)
+    first_state = get_probabilities([('*', '*', sentence_id, 0)], w, sentence_lst, callable_functions, poss)
 
     for idx, y in enumerate(poss):
         current_probability = first_state[idx]
@@ -82,10 +82,10 @@ def viterbi_s(sentence_id, sentence_lst, w, callable_functions):
         for y0 in poss:
             if t != 1:
                 all_probabilities_dict_dict[y0] = get_probabilities([(y0, path_dict[y0][-2], sentence_id, t)], w,
-                                                                    sentence_lst, callable_functions)
+                                                                    sentence_lst, callable_functions, poss)
             else:
                 all_probabilities_dict_dict[y0] = get_probabilities([(y0, '*', sentence_id, t)], w, sentence_lst,
-                                                                    callable_functions)
+                                                                    callable_functions, poss)
 
         for y_idx, y in enumerate(poss):
             max_prob = - 1
@@ -139,7 +139,28 @@ def pickle_save(obj, filename):
         return None
 
 
+def get_tags(file):
+    poss = []
 
+    if file == 'train.wtag':
+        poss = ['RBR', '``', 'JJS', ',', 'VBG', 'VBZ', 'TO', 'MD', 'JJ', 'RB', 'VBP', '-LRB-', 'DT', 'WP$', 'PDT', 'CD',
+                'NN', 'WP', 'VB', '$', 'POS', 'WRB', 'IN', 'VBN', 'NNP', 'RP', 'EX', 'JJR', 'PRP', '-RRB-', "''", 'VBD',
+                '.', 'RBS', ':', 'PRP$', 'NNS', 'WDT', 'CC', 'UH', 'SYM', 'NNPS', 'FW', '#']
+    elif file == 'train2.wtag':
+        poss = ['WP', 'JJS', 'LS', 'RBS', 'SYM', 'RBR', 'NNP', 'JJR', 'RP', 'EX', 'RB', 'PRP', 'VBP', 'IN', 'NN',
+                  'DT', 'JJ', 'MD', 'VB', 'TO', 'NNS', 'VBD', 'CC', 'WDT', 'VBG', 'VBN', 'VBZ', 'CD', 'FW', 'WRB',
+                  'PDT', ',', ':', '.']
+
+    return poss
+
+
+def get_poss_dict(poss):
+    pos_dic = {}
+
+    for idx, pos in enumerate(poss):
+        pos_dic[pos] = idx
+
+    return pos_dic
 
 '''
 Part Of Speech from the template
@@ -159,8 +180,3 @@ poss_2 = ['WP', 'JJS', 'LS', 'RBS', 'SYM', 'RBR','NNP', 'JJR', 'RP', 'EX', 'RB',
           'DT', 'JJ',  'MD','VB', 'TO','NNS', 'VBD', 'CC', 'WDT','VBG', 'VBN', 'VBZ', 'CD', 'FW', 'WRB',
           'PDT',',', ':', '.']
 '''
-
-# LS is in train2 but not in train
-poss = ['RBR', '``', 'JJS', ',', 'VBG', 'VBZ', 'TO', 'MD', 'JJ', 'RB', 'VBP', '-LRB-', 'DT', 'WP$', 'PDT', 'CD',
-        'NN', 'WP', 'VB', '$', 'POS', 'WRB', 'IN', 'VBN', 'NNP', 'RP', 'EX', 'JJR', 'PRP', '-RRB-', "''", 'VBD',
-        '.', 'RBS', ':', 'PRP$', 'NNS', 'WDT', 'CC', 'UH', 'SYM', 'NNPS', 'FW', '#']

@@ -1,22 +1,23 @@
 import sys
 from postagger.utils.classifier import MaximumEntropyClassifier
 from postagger.utils.common import timeit, get_data_path
+from postagger.utils.common import get_tags
 from postagger.utils.preprocess import load_save_preprocessed_data
 from postagger.utils.decoder import CompData
 from postagger.utils.classifier import save_load_init_model
 
 # params
-load_model = False
+load_model = True
 load_matrices = False
 load_preprocess = True
-model_name = 'model2.pickle'
-model_matrices = 'model2_matrices.pickle'
-model_preprocess = 'model2_preprocess.pickle'
+model_name = 'model_dev.pickle'
+model_matrices = 'model_matrices_dev.pickle'
+model_preprocess = 'model_preprocess_dev.pickle'
 verbose = 1
 
 # data files
-train = 'train2.wtag'
-test = 'train2.wtag'
+train = 'train.wtag'
+test = 'dev/test_dev.wtag'
 comp = 'comp.words'
 
 
@@ -45,6 +46,9 @@ regularization = 1
 
 @timeit
 def main(argv):
+
+
+
     if load_model:
         clf = save_load_init_model(clf=None, filename=model_name)
     else:
@@ -60,14 +64,9 @@ def main(argv):
             preprocessor = load_save_preprocessed_data(model_preprocess, train_sentences, load=load_preprocess)
             # apply filtering
             pdict = preprocessor.summarize_counts(method='cut', dict=min_occurrence_dict)
-
-            tags = set([i[1] for i in preprocessor.pdict['wordtag-f100']])
-            poss = ['RBR', '``', 'JJS', ',', 'VBG', 'VBZ', 'TO', 'MD', 'JJ', 'RB', 'VBP', '-LRB-', 'DT', 'WP$', 'PDT',
-                    'CD', 'NN',
-                    'WP', 'VB', '$', 'POS', 'WRB', 'IN', 'VBN', 'NNP', 'RP', 'EX', 'JJR', 'PRP', '-RRB-', "''", 'VBD',
-                    '.', 'RBS',
-                    ':', 'PRP$', 'NNS', 'WDT', 'CC', 'UH']
-            clf = MaximumEntropyClassifier(train_sentences, pdict)
+            # init classifier with known tags
+            tags = get_tags(train)
+            clf = MaximumEntropyClassifier(train_sentences, pdict, tags)
             save_load_init_model(clf=clf, filename=model_matrices)
 
         print("Start fitting %d features" % clf.get_num_features())

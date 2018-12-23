@@ -70,7 +70,7 @@ class CompData(Dataset):
             word_tag_tuples = []
             if not self.comp:
                 for word in words:
-                    word_stripped, tag_stripped = word.split('_')
+                    word_stripped, tag_stripped = word.split('_')  # TODO: breaks when parsing train2 (has EOF)
                     word_tag_tuples.append((word_stripped, tag_stripped))
                     stripped_sentence.append(word_stripped)
 

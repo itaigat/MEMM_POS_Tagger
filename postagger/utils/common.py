@@ -6,6 +6,7 @@ import numpy as np
 import time
 
 from postagger.utils.features import build_y_x_matrix
+from postagger.utils.score import tag_test_file
 
 
 def read_file(file_path):
@@ -59,7 +60,6 @@ def get_probabilities(x, w, sentences, callable_functions, poss):
     sums = 1.0 / (help_matrix.transpose() * (help_matrix * np.exp(y_x_matrix * w)))
     probs_matrix = sums * np.exp(y_x_matrix * w)
     return probs_matrix
-
 
 
 def viterbi_s(sentence_id, sentence_lst, w, callable_functions, poss):
@@ -148,8 +148,8 @@ def get_tags(file):
                 '.', 'RBS', ':', 'PRP$', 'NNS', 'WDT', 'CC', 'UH', 'SYM', 'NNPS', 'FW', '#']
     elif file == 'train2.wtag':
         poss = ['WP', 'JJS', 'LS', 'RBS', 'SYM', 'RBR', 'NNP', 'JJR', 'RP', 'EX', 'RB', 'PRP', 'VBP', 'IN', 'NN',
-                  'DT', 'JJ', 'MD', 'VB', 'TO', 'NNS', 'VBD', 'CC', 'WDT', 'VBG', 'VBN', 'VBZ', 'CD', 'FW', 'WRB',
-                  'PDT', ',', ':', '.']
+                'DT', 'JJ', 'MD', 'VB', 'TO', 'NNS', 'VBD', 'CC', 'WDT', 'VBG', 'VBN', 'VBZ', 'CD', 'FW', 'WRB',
+                'PDT', ',', ':', '.']
 
     return poss
 
@@ -161,6 +161,16 @@ def get_poss_dict(poss):
         pos_dic[pos] = idx
 
     return pos_dic
+
+
+def generate_comp_files(sentences, predicted, file_name='RunOut.wtag'):
+    if predicted is not None and sentences is not None:
+        txt = tag_test_file(sentences, predicted)
+        with open(file_name, "w") as text_file:
+            text_file.write(txt)
+    else:
+        print('No sentences / predicted sentences provided')
+
 
 '''
 Part Of Speech from the template

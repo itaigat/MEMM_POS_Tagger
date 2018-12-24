@@ -20,7 +20,6 @@ train = 'train2.wtag'
 test = 'test.wtag'
 comp = 'comp.words'
 
-
 # hyper params
 
 # features
@@ -43,6 +42,7 @@ min_occurrence_dict = {
 
 # model
 regularization = 1
+
 
 @timeit
 def main():
@@ -189,4 +189,3 @@ if __name__ == '__main__':
         training2()
     else:
         main()
-

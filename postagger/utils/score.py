@@ -119,7 +119,10 @@ def tag_test_file(data, tags):
     tagged_st = ''
     for sentence_idx, sentence in enumerate(data):
         for word_idx, word in enumerate(sentence):
-            tagged_st += word + '_' + tags[sentence_idx][word_idx] + ' '
+            if word_idx != (len(sentence) - 1):
+                tagged_st += word + '_' + tags[sentence_idx][word_idx] + ' '
+            else:
+                tagged_st += word + '_' + tags[sentence_idx][word_idx]
         tagged_st += '\n'
 
     return tagged_st

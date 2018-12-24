@@ -139,7 +139,7 @@ class MaximumEntropyClassifier:
         enabled = y_x_sum_rows.reshape(len(self.X), len(self.poss)).sum(axis=0)
         counts = enabled.tolist()[0]
         tuples_list = []
-        for i,count in enumerate(counts):
+        for i, count in enumerate(counts):
             tup = (self.poss[i], count)
             tuples_list.append(tup)
 
@@ -147,15 +147,6 @@ class MaximumEntropyClassifier:
 
         sorted_dict = sorted(counts_dict.items(), key=operator.itemgetter(1), reverse=True)
         return sorted_dict
-
-    def save_prediction_to_file(self, sentences, predicted, file_name='RunOut.wtag'):
-        #  TODO: modify and test; make static method and don't change classifier logic, will break pickle o.w.
-        if predicted is not None and sentences is not None:
-            txt = tag_test_file(sentences, predicted)
-            with open(file_name, "w") as text_file:
-                text_file.write(txt)
-        else:
-            print('No sentences / predicted sentences provided')
 
 
 def save_load_init_model(clf, filename):

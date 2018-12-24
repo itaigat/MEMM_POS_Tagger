@@ -8,6 +8,7 @@ from postagger.utils.params import Params
 from postagger.utils.common import viterbi_s, get_poss_dict
 from postagger.utils.common import pickle_save, pickle_load
 from postagger.utils.score import accuracy, get_top_k_errors
+from postagger.utils.score import tag_test_file
 
 
 class MaximumEntropyClassifier:
@@ -56,6 +57,7 @@ class MaximumEntropyClassifier:
         self.v = None
         self.verbose = 0
         self.poss = poss
+        self.predicted = None
 
     @timeit
     def fit(self, reg=0, verbose=0):
@@ -128,6 +130,8 @@ class MaximumEntropyClassifier:
         print('Top K errors: ', get_top_k_errors(tags_predicted, true_tags, get_poss_dict(self.poss), k=10))
         print('Confusion Matrix:')
 
+        self.predicted = tags_predicted
+
         return tags_predicted
 
     def get_num_features(self):
@@ -146,6 +150,14 @@ class MaximumEntropyClassifier:
 
         sorted_dict = sorted(counts_dict.items(), key=operator.itemgetter(1), reverse=True)
         return sorted_dict
+
+    def save_prediction_to_file(self, file_name='RunOut.wtag'):
+        if self.predicted is not None:
+            txt = tag_test_file(self.sentences, self.predicted)
+            with open(file_name, "w") as text_file:
+                text_file.write(txt)
+        else:
+            print('Need to fit first')
 
 
 def save_load_init_model(clf, filename):

@@ -57,7 +57,6 @@ class MaximumEntropyClassifier:
         self.v = None
         self.verbose = 0
         self.poss = poss
-        self.predicted = None
 
     @timeit
     def fit(self, reg=0, verbose=0):
@@ -120,19 +119,17 @@ class MaximumEntropyClassifier:
                 tmp = viterbi_s(tuples[0][2], sentences, self.v, self.callable_functions, self.poss)
                 tags_predicted.append(tmp)
                 true_tags.append(tags)
+                acc = accuracy(tags_predicted, true_tags)
                 print("Sentence: " + str(sentence))
                 print("Tags: " + str(tags))
                 print("Pred: " + str(tmp))
+                print('Accuracy: ', acc)
 
-                print('Accuracy: ', accuracy(tags_predicted, true_tags))
+        print('Total accuracy: ', acc)
+        top_k_errors = get_top_k_errors(tags_predicted, true_tags, get_poss_dict(self.poss), k=10)
+        print('Top K errors: ', top_k_errors)
 
-        print("Total accuracy: ", accuracy(tags_predicted, true_tags))
-        print('Top K errors: ', get_top_k_errors(tags_predicted, true_tags, get_poss_dict(self.poss), k=10))
-        print('Confusion Matrix:')
-
-        self.predicted = tags_predicted
-
-        return tags_predicted
+        return {'accuracy': acc, 'prediction': tags_predicted, 'top_10_errors': top_k_errors}
 
     def get_num_features(self):
         return self.feature_matrix.shape[1]
@@ -151,13 +148,14 @@ class MaximumEntropyClassifier:
         sorted_dict = sorted(counts_dict.items(), key=operator.itemgetter(1), reverse=True)
         return sorted_dict
 
-    def save_prediction_to_file(self, file_name='RunOut.wtag'):
-        if self.predicted is not None:
-            txt = tag_test_file(self.sentences, self.predicted)
+    def save_prediction_to_file(self, sentences, predicted, file_name='RunOut.wtag'):
+        #  TODO: modify and test; make static method and don't change classifier logic, will break pickle o.w.
+        if predicted is not None and sentences is not None:
+            txt = tag_test_file(sentences, predicted)
             with open(file_name, "w") as text_file:
                 text_file.write(txt)
         else:
-            print('Need to fit first')
+            print('No sentences / predicted sentences provided')
 
 
 def save_load_init_model(clf, filename):

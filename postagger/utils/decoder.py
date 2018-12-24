@@ -16,16 +16,18 @@ class Dataset(object):
         ```
     """
 
-    def __init__(self, filename, max_iter=None, comp=False):
+    def __init__(self, filename, max_iter=None, comp=False, slice=None):
         """
         Args:
             filename: path to the file
             max_iter: (optional) max number of sentence to yield
+            slice: expects indices range e.g., (0,1000) -> 0:1000, assumes correct sizes
         """
         self.filename = filename
         self.max_iter = max_iter
         self.length = None
         self.comp = comp
+        self.slice = slice
 
     def __iter__(self):
         pass
@@ -60,7 +62,13 @@ class CompData(Dataset):
         txt = self.get_comp_text()
         # split by sentences
         sentences = txt.split('\n')
-
+        # breaks when parsing train2 (has EOF)
+        if sentences[-1] == '':
+            sentences = sentences[:-1]
+        # slice data
+        if self.slice is not None:
+            start, end = self.slice
+            sentences = sentences[start:end]
         for sent_id, sentence in enumerate(sentences):
             words = sentence.split(' ')
             stripped_sentence = []
@@ -70,7 +78,7 @@ class CompData(Dataset):
             word_tag_tuples = []
             if not self.comp:
                 for word in words:
-                    word_stripped, tag_stripped = word.split('_')  # TODO: breaks when parsing train2 (has EOF)
+                    word_stripped, tag_stripped = word.split('_')
                     word_tag_tuples.append((word_stripped, tag_stripped))
                     stripped_sentence.append(word_stripped)
 

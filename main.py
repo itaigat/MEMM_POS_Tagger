@@ -137,9 +137,9 @@ def training2():
     train = 'train2.wtag'
 
     train_path = get_data_path(train)
-    train_sentences = CompData(train_path, slice=(0, 5))
+    train_sentences = CompData(train_path, slice=(0, 630))
 
-    validation_sentences = CompData(train_path, slice=(5, 6))
+    validation_sentences = CompData(train_path, slice=(630, 700))
 
     preprocessor = load_save_preprocessed_data(model_preprocess, train_sentences, load=load_preprocess)
 
@@ -164,10 +164,10 @@ def training2():
     min_occur = [ {'previousword-f106': 1, 'nextword-f107':1, 'pre_pre_word': 0, 'next_next_word': 0},
                   {'previousword-f106': 1, 'nextword-f107':1, 'pre_pre_word': 1, 'next_next_word': 1},
                   {'previousword-f106': 1, 'nextword-f107': 1, 'pre_pre_word': 2, 'next_next_word': 2},
-                  {'previousword-f106': 1, 'nextword-f107': 1, 'pre_pre_word': 1, 'next_next_word': 1},
                   {'previousword-f106': 0, 'nextword-f107': 0, 'pre_pre_word': 2, 'next_next_word': 2},
+                  {'previousword-f106': 0, 'nextword-f107': 0, 'pre_pre_word': 1, 'next_next_word': 1},
                   {'previousword-f106': 2, 'nextword-f107': 2, 'pre_pre_word': 0, 'next_next_word': 0}]
-    best_model = 'best_model2.pickle'
+    best_model = 'best_model.pickle'
     best_acc = 0
     test_acc = 0
     results = {}

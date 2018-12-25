@@ -10,14 +10,14 @@ from postagger.utils.classifier import save_load_init_model
 load_model = False
 load_matrices = False
 load_preprocess = False
-model_name = 'model_dev.pickle'
-model_matrices = 'model_matrices_dev.pickle'
-model_preprocess = 'model_preprocess_dev.pickle'
+model_name = 'model2.pickle'
+model_matrices = 'model2_matrices.pickle'
+model_preprocess = 'model2_preprocess.pickle'
 verbose = 1
 
 # data files
-train = 'train2.wtag'
-test = 'test.wtag'
+train = 'train.wtag'
+test = 'train2.wtag'
 comp = 'comp.words'
 
 # hyper params
@@ -30,14 +30,14 @@ min_occurrence_dict = {
     'trigram-f103': 0,
     'bigram-f104': 0,
     'unigram-f105': 0,
-    'previousword-f106': 0,
-    'nextword-f107': 0,
+    'previousword-f106': 2,
+    'nextword-f107': 2,
     'starting_capital': 0,
     'capital_inside': 0,
     'number_inside': 0,
     'hyphen_inside': 0,
-    'pre_pre_word': 0,
-    'next_next_word': 0
+    'pre_pre_word': 2,
+    'next_next_word': 2
 }
 
 # model
@@ -137,40 +137,71 @@ def training2():
     train = 'train2.wtag'
 
     train_path = get_data_path(train)
-    train_sentences = CompData(train_path, slice=(0, 630))
+    train_sentences = CompData(train_path, slice=(0, 5))
 
-    validation_sentences = CompData(train_path, slice=(630, 700))
+    validation_sentences = CompData(train_path, slice=(5, 6))
 
     preprocessor = load_save_preprocessed_data(model_preprocess, train_sentences, load=load_preprocess)
-    # apply filtering
-    pdict = preprocessor.summarize_counts(method='cut', dict=min_occurrence_dict)
-    # init classifier with known tags
-    tags = get_tags(train)
-    clf = MaximumEntropyClassifier(train_sentences, pdict, tags)
 
-    reg = [1e-2, 1e-1, 1, 3, 5, 10, 25, 50, 100, 500, 1000]
-    best_model = 'best_model.pickle'
+    min_occurrence_dict = {
+        'wordtag-f100': 0,
+        'suffix-f101': 0,
+        'prefix-f102': 0,
+        'trigram-f103': 0,
+        'bigram-f104': 0,
+        'unigram-f105': 0,
+        'previousword-f106': 0,
+        'nextword-f107': 0,
+        'starting_capital': 0,
+        'capital_inside': 0,
+        'number_inside': 0,
+        'hyphen_inside': 0,
+        'pre_pre_word': 0,
+        'next_next_word': 0
+    }
+
+    reg = [1e-3, 1e-2, 1e-1]
+    min_occur = [ {'previousword-f106': 1, 'nextword-f107':1, 'pre_pre_word': 0, 'next_next_word': 0},
+                  {'previousword-f106': 1, 'nextword-f107':1, 'pre_pre_word': 1, 'next_next_word': 1},
+                  {'previousword-f106': 1, 'nextword-f107': 1, 'pre_pre_word': 2, 'next_next_word': 2},
+                  {'previousword-f106': 1, 'nextword-f107': 1, 'pre_pre_word': 1, 'next_next_word': 1},
+                  {'previousword-f106': 0, 'nextword-f107': 0, 'pre_pre_word': 2, 'next_next_word': 2},
+                  {'previousword-f106': 2, 'nextword-f107': 2, 'pre_pre_word': 0, 'next_next_word': 0}]
+    best_model = 'best_model2.pickle'
     best_acc = 0
     test_acc = 0
     results = {}
-    for r in reg:
-        print("Start fitting model, reg: ", str(r))
-        clf.fit(reg=r)
-        try:
-            print("Evaluate train:")
-            train_pred = clf.predict(train_sentences)
-            train_acc = train_pred['accuracy']
-            print("Evaluate validation:")
-            test_pred = clf.predict(validation_sentences)
-            test_acc = test_pred['accuracy']
-            results[('reg', r)] = {'train_acc': train_acc, 'validation_acc': test_acc}
-            if test_acc > best_acc:
-                best_acc = test_acc
-                save_load_init_model(clf=clf, filename=best_model)
-        except:
-            pass
-        print("Current results", results)
-        print("\n\n")
+
+    for occur_dict in min_occur:
+        # apply filtering
+        # update dict
+        print("Init new classifier with updated occurrence dict")
+        print(occur_dict)
+        for key, value in occur_dict.items():
+            min_occurrence_dict[key] = value
+        pdict = preprocessor.summarize_counts(method='cut', dict=min_occurrence_dict)
+        # init classifier with known tags
+        tags = get_tags(train)
+        clf = MaximumEntropyClassifier(train_sentences, pdict, tags)
+        for r in reg:
+
+            print("Start fitting model, reg: ", str(r))
+            clf.fit(reg=r)
+            try:
+                print("Evaluate train:")
+                train_pred = clf.predict(train_sentences)
+                train_acc = train_pred['accuracy']
+                print("Evaluate validation:")
+                test_pred = clf.predict(validation_sentences)
+                test_acc = test_pred['accuracy']
+                results[('reg', r, str(occur_dict))] = {'train_acc': train_acc, 'validation_acc': test_acc}
+                if test_acc > best_acc:
+                    best_acc = test_acc
+                    save_load_init_model(clf=clf, filename=best_model)
+            except:
+                pass
+            print("Current results", results)
+            print("\n\n")
 
     print("Final results")
     print(results)

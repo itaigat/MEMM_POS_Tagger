@@ -118,8 +118,8 @@ def F1(predicted, true):
 def tag_test_file(data, tags):
     tagged_st = ''
     for sentence_idx, sentence in enumerate(data):
-        for word_idx, word in enumerate(sentence):
-            if word_idx != (len(sentence) - 1):
+        for word_idx, word in enumerate(sentence[2]):
+            if word_idx != (len(sentence[2]) - 1):
                 tagged_st += word + '_' + tags[sentence_idx][word_idx] + ' '
             else:
                 tagged_st += word + '_' + tags[sentence_idx][word_idx]

@@ -97,7 +97,7 @@ class MaximumEntropyClassifier:
 
         return res
 
-    def predict(self, X):
+    def predict(self, X, comp=False):
         """
         :param X: [(sentence_index, sentence_list),...,()]
         :return: [tags_sentence_1...]
@@ -119,17 +119,20 @@ class MaximumEntropyClassifier:
                 tmp = viterbi_s(tuples[0][2], sentences, self.v, self.callable_functions, self.poss)
                 tags_predicted.append(tmp)
                 true_tags.append(tags)
-                acc = accuracy(tags_predicted, true_tags)
-                print("Sentence: " + str(sentence))
-                print("Tags: " + str(tags))
-                print("Pred: " + str(tmp))
-                print('Accuracy: ', acc)
-
-        print('Total accuracy: ', acc)
-        top_k_errors = get_top_k_errors(tags_predicted, true_tags, get_poss_dict(self.poss), k=10)
-        print('Top K errors: ', top_k_errors)
-
-        return {'accuracy': acc, 'prediction': tags_predicted, 'top_10_errors': top_k_errors}
+                if not comp:
+                    acc = accuracy(tags_predicted, true_tags)
+                    print("Sentence: " + str(sentence))
+                    print("Tags: " + str(tags))
+                    print("Pred: " + str(tmp))
+                    print('Accuracy: ', acc)
+        if not comp:
+            print('Total accuracy: ', acc)
+            top_k_errors = get_top_k_errors(tags_predicted, true_tags, get_poss_dict(self.poss), k=10)
+            print('Top K errors: ', top_k_errors)
+        if not comp:
+            return {'accuracy': acc, 'prediction': tags_predicted, 'top_10_errors': top_k_errors}
+        else:
+            return {'prediction': tags_predicted}
 
     def get_num_features(self):
         return self.feature_matrix.shape[1]
